@@ -386,9 +386,9 @@ def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False):
 
     # compute losses for each opponent
     cross['losses_attacker'] = cross['hits_defender'].subtract(
-        cross['ignored_hits_attacker']).clip(0)
+        cross['ignored_hits_attacker']).clip(0, attacker.army_size)
     cross['losses_defender'] = cross['hits_attacker'].subtract(
-        cross['ignored_hits_defender']).clip(0)
+        cross['ignored_hits_defender']).clip(0, defender.army_size)
 
     # group losses
     losses = cross.groupby(['losses_attacker', 'losses_defender'])[
