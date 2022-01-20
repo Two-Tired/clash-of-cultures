@@ -217,7 +217,7 @@ class Army:
     def infantry_ability(self, i):
         '''
         Returns the combat bonus through infantry ability activations.
-        
+
         :param i: rolled number of infantry abilities
         :returns: combat bonus
         '''
@@ -226,7 +226,7 @@ class Army:
     def cavalry_ability(self, c):
         '''
         Returns the combat bonus through cavalry ability activations.
-        
+
         :param c: rolled number of cavalry abilities
         :returns: combat bonus
         '''
@@ -236,7 +236,7 @@ class Army:
         '''
         Returns the combat malus through elephant ability activations and the 
         number of ignored hits.
-        
+
         :param e2: rolled number of elephant abilities (on dice side 2)
         :param e3: rolled number of elephant abilities (on dice side 3)
         :param e4: rolled number of elephant abilities (on dice side 4)
@@ -266,7 +266,7 @@ class Army:
     def is_leader_ability_active(self, l):
         '''
         Returns whether your leader ability gets activated by your roll
-        
+
         :param l: rolled number of leader abilities
         :returns: whether leader ability is active
         '''
@@ -276,7 +276,7 @@ class Army:
         '''
         Returns a list of all possible combination when re-rolling the leader dice.
         Make sure that `is_leader_ability_active` is true!
-        
+
         :param value: original summed dice values
         :param i: rolled number of infantry abilities
         :param c: rolled number of cavalry abilities
@@ -344,6 +344,57 @@ class Battle:
         default=BattleType.LAND,
         validator=attrs.validators.instance_of(BattleType)
     )
+
+
+def values_to_hits(combat_value_probs):
+    combat_value_probs = combat_value_probs.rename(columns={'value': 'hits'})
+    combat_value_probs['hits'] = combat_value_probs['hits'].floordiv(5)
+
+    combat_value_probs = combat_value_probs \
+        .groupby(['hits', 'ignored_hits']) \
+        .sum() \
+        .reset_index()
+
+    return combat_value_probs
+
+
+def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False):
+    '''
+    Given the two fighting armies, this method returns the losses of a battle round.
+
+    :param attacker: the attacking army
+    :param defender: the defending army
+    :param first_round: whether this is the first battle round
+    :returns: DataFrame with columns 'losses_attacker', 'losses_defender', 'probability'
+    '''
+    a = attacker.combat_value_probabilities(first_round=first_round,
+                                            opponent=defender,
+                                            attacking=True)
+    d = defender.combat_value_probabilities(first_round=first_round,
+                                            opponent=attacker,
+                                            attacking=False)
+
+    a_hits = values_to_hits(a)
+    d_hits = values_to_hits(d)
+
+    # merge all rows of a with all rows of d (cross-product)
+    cross = a_hits.merge(d_hits, 'cross', suffixes=('_attacker', '_defender'))
+
+    # compute combined probability of each row
+    cross['probability'] = cross['probability_attacker'] * \
+        cross['probability_defender']
+
+    # compute losses for each opponent
+    cross['losses_attacker'] = cross['hits_defender'].subtract(
+        cross['ignored_hits_attacker']).clip(0)
+    cross['losses_defender'] = cross['hits_attacker'].subtract(
+        cross['ignored_hits_defender']).clip(0)
+
+    # group losses
+    losses = cross.groupby(['losses_attacker', 'losses_defender'])[
+        'probability'].sum().reset_index()
+
+    return losses
 
 
 # value, skill, probability

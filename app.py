@@ -1,4 +1,4 @@
-from combat import Army, Battle, BattleType, SiegecraftType
+from combat import Army, Battle, BattleType, SiegecraftType,battle_round
 
 
 if __name__ == '__main__':
@@ -13,9 +13,8 @@ if __name__ == '__main__':
 
     battle = Battle(attacker=attacker, defender=defender)
 
-    a = attacker.combat_value_probabilities(first_round=False,
-                                            opponent=defender,
-                                            attacking=True)
+    # a = attacker.combat_value_probabilities(first_round=False, opponent=defender, attacking=True)
     # d = defender.combat_value_probabilities(first_round=False, opponent=attacker, attacking=False)
 
-    print(a)
+    losses = battle_round(attacker, defender)
+    print(losses)
