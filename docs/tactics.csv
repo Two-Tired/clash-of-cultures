@@ -1,4 +1,4 @@
-Titel;Anzahl;Armee;Schiff;Festung;Wann;Was
+title;count;army;ship;fortress;timing;effect
 Belagerung;1;1;0;0;Schlacht gegen Stadt bei Kampfwurf;Erhalte +1 KS. Außerdem darf dein Gegner vor seinem Kampfwurf 2 Nahrung bezahlen. Tut er das nicht, kann er in dieser Kampfrunde keine Kampffertigkeiten aktivieren.
 Bogenschützen;4;1;0;0;Beim Aufdecken;Wirf 1 W. 5 oder 6: Dein Gegner muss sofort 1 seiner Armee-Einheiten entfernen.
 Erhöhte Position;5;1;0;1;Bei Kampfwurf;Dein Gegner kann keine Kampffertigkeiten aktivieren. Achtung: Nicht nutzbar, wenn du der Angreifer einer Schlacht in einer Stadt bist.

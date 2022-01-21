@@ -1,0 +1,8 @@
+civilization;title;cost;timing;effect
+Griechenland;Spartiaten;;Landschlacht;Bist du zu Beginn einer Kampfrunde in Unterzahl? Gegner kann keine Taktik spielen.
+Japan;Reitkunst;;Landschlacht mit Festung;In der 1. Kampfrunde erhält 1 Kavallerie -> Kampffertigkeit: + 3 KS.
+China;Feuerwerk;1 Erz 1 Holz;Schlacht in 1. Kampfrunde;Ignoriere 1 Treffer.
+Phönizien;Bireme;;Seeschlacht;Erhalte +2 KS. Gegner mit Kriegsmarine? Nur für die 1. Kampfrunde.
+Kelten;Stammesbrüder;;Landschlacht;Nur gegen gegnerische (keine Barbaren) Armee-Einheiten: +1 KS pro Barbaren-Stadt in Reichweite 2 von hier (max + 4 KS).
+Persien;Graue Flut;;Schlacht mit Kriegselefanten; Gegner kann in der 1. Kampfrunde maximal +2 KS erhalten.
+Persien;Unsterbliche;X Kultur, max 4; Schlacht vor Kampfwurf; Erhalte +X KS.
