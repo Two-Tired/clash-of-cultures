@@ -2,19 +2,21 @@ from enum import Enum
 from collections import Counter
 import attrs
 import math
+import numpy as np
 import pandas as pd
+from typing import Callable, Optional
 
 
 class UnitType(Enum):
     '''
-    Enum for the different unit types. 
-    A special case is the elephant, which is split up into three 
-    sub-units to allow for computation of their ability (it is 
+    Enum for the different unit types.
+    A special case is the elephant, which is split up into three
+    sub-units to allow for computation of their ability (it is
     relevant which of the dice's sides showed the elephant symbol)
 
     ...
 
-    Values are selected such that bitwise comparisons are possible 
+    Values are selected such that bitwise comparisons are possible
     to determine whether some elephant is selected. For example:
         (is_elephant.value & UnitType.ELEPHANTS.value) > 0
     returns true when "is_elephant" is one of the elephant types
@@ -55,7 +57,7 @@ def validate_max_army_count(instance, attribute, value):
 @attrs.define(frozen=True)
 class Army:
     '''
-    A class to represent a single army (i.e. group of military units). 
+    A class to represent a single army (i.e. group of military units).
     '''
     infantry: int = attrs.field(
         default=0,
@@ -124,7 +126,7 @@ class Army:
 
     def combat_value_probabilities(self, first_round: bool = False, opponent: 'Army' = None, attacking: bool = False, type: 'BattleType' = None):
         '''
-        Returns a list of probabilities with corresponding army values and ignored hits for this army when 
+        Returns a list of probabilities with corresponding army values and ignored hits for this army when
         fighting the specified opponent in the specified environment.
 
         :param first_round: is this the first battle round?
@@ -234,7 +236,7 @@ class Army:
 
     def elephant_ability(self, e2, e3, e4):
         '''
-        Returns the combat malus through elephant ability activations and the 
+        Returns the combat malus through elephant ability activations and the
         number of ignored hits.
 
         :param e2: rolled number of elephant abilities (on dice side 2)
@@ -395,6 +397,54 @@ def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False):
         'probability'].sum().reset_index()
 
     return losses
+
+
+def max_count_reduce_strategy(hits_taken: int, army: Army) -> Optional[Army]:
+    '''
+    The basic strategy for removing units after taking hits. The strategy evolves around
+    keeping a high unit diversity by reducing the unit type that has the most duplicates.
+    In case of ties, units are removed in order 'infantry -> cavalry -> elephants -> leader'
+
+    :param hits_taken: number of hits taken
+    :param army: your army
+    :returns: new army with reduced unit counts or None if
+    '''
+    # counts are given in order of increasing value such that removing the first
+    # occurence of the maximum count always removes least important unit type
+    counts = np.array([army.infantry, army.cavalry,
+                      army.elephants, army.leader])
+
+    for i in range(hits):
+        largest_type = np.argmax(counts)
+        counts[largest_type] -= 1
+
+    if (sum(counts) == 0):
+        return None
+
+    counts = counts.tolist()
+    new_army = attrs.evolve(
+        army, infantry=counts[0], cavalry=counts[1], elephants=counts[2], leader=counts[3])
+    return new_army
+
+
+def reduce_armies(attacker: 'Army',
+                  hits_attacker: int,
+                  defender: 'Army',
+                  hits_defender: int,
+                  reduce_strategy: Callable[[int, Army], Army] = max_count_reduce_strategy) -> (Optional[Army], Optional[Army]):
+    '''
+    Returns the reduced armies when applying the specified reduce strategy.
+
+    :param attacker: attacking army
+    :param hits_atttacker: number of hits the attacker deals
+    :param defender: defending army
+    :param hits_defender: number of hits the defender deals
+    :returns: tuple of the two Armies, which might be None due to loosing all units
+    '''
+    a = reduce_strategy(hits_defender, attacker)
+    d = reduce_strategy(hits_attacker, defender)
+
+    return a, d
 
 
 # value, skill, probability
