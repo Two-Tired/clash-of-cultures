@@ -1,6 +1,7 @@
 from enum import Enum
 from collections import Counter
 import attrs
+from attrs.validators import instance_of, optional
 import math
 import numpy as np
 import pandas as pd
@@ -105,18 +106,22 @@ class Army:
         ]
     )
     fortress: bool = attrs.field(
+        repr=False,
         default=False,
         validator=attrs.validators.instance_of(bool)
     )
     steel_weapons: bool = attrs.field(
+        repr=False,
         default=False,
         validator=attrs.validators.instance_of(bool)
     )
     warships: bool = attrs.field(
+        repr=False,
         default=False,
         validator=attrs.validators.instance_of(bool)
     )
     siegecraft_type: SiegecraftType = attrs.field(
+        repr=False,
         default=SiegecraftType.NONE,
         validator=attrs.validators.instance_of(SiegecraftType)
     )
@@ -371,10 +376,61 @@ class Battle:
     defender: Army = attrs.field(
         validator=attrs.validators.instance_of(Army)
     )
-    type: BattleType = attrs.field(
+    battle_type: BattleType = attrs.field(
         default=BattleType.LAND,
         validator=attrs.validators.instance_of(BattleType)
     )
+    max_rounds: int = attrs.field(
+        default=10,
+        validator=[
+            attrs.validators.instance_of(int),
+            attrs.validators.ge(0)
+        ]
+    )
+
+
+@attrs.define
+class BattleState:
+    '''
+    Class representing a possible state during a battle.
+    '''
+    attacker: Army = attrs.field(
+        # validator=optional(instance_of(Army))
+    )
+    defender: Army = attrs.field(
+        # validator=optional(instance_of(Army))
+    )
+    probability: float = attrs.field(
+        validator=[
+            attrs.validators.instance_of(float),
+            attrs.validators.ge(0),
+            attrs.validators.le(1),
+        ]
+    )
+    battle: Battle = attrs.field(
+        repr=False,
+        validator=attrs.validators.instance_of(Battle)
+    )
+    previous_state: 'BattleState' = attrs.field(
+        repr=False,
+        default=None,
+        # validator=optional(instance_of('BattleState'))
+    )
+    next_states: list('BattleState') = attrs.field(
+        repr=False,
+        factory=list
+    )
+
+    @classmethod
+    def initial_state(cls, battle: Battle):
+        return cls(battle.attacker, battle.defender, 1.0, battle)
+
+    def print_leaves(self):
+        if not self.next_states:
+            print(self)
+
+        for state in self.next_states:
+            state.print_leaves()
 
 
 def values_to_hits(combat_value_probs):
@@ -432,21 +488,45 @@ def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False):
     return losses
 
 
-def battle(attacker: 'Army', defender: 'Army', battle_type: BattleType = BattleType.LAND):
-    max_iteration = 10
-    iteration = 0
-    while (attacker != None and defender != None and iteration < max_iteration):
-        print("Fight!")
-        iteration += 1
+def simulate_battle(battle: Battle):
+    initial_state = BattleState.initial_state(battle)
+
+    open_states = [initial_state]
+    round_number = 0
+    while (round_number < battle.max_rounds and open_states):
+        state = open_states.pop()
+
+        losses = battle_round(
+            state.attacker,
+            state.defender,
+            round_number == 0
+        )
+
+        for index, row in losses.iterrows():
+            # skip case where no units are lost
+            if not row.losses_attacker and not row.losses_defender:
+                continue
+
+            a, d = reduce_armies(state.attacker, int(row.losses_attacker),
+                                 state.defender, int(row.losses_defender))
+            prob = state.probability * row.probability
+            new_state = BattleState(a, d, prob, battle, state)
+            state.next_states.append(new_state)
+            if a and d:
+                open_states.append(new_state)
+
+        round_number += 1
+
+    return initial_state
 
 
-def max_count_reduce_strategy(hits_taken: int, army: Army) -> Optional[Army]:
+def max_count_reduce_strategy(losses: int, army: Army) -> Optional[Army]:
     '''
     The basic strategy for removing units after taking hits. The strategy evolves around
     keeping a high unit diversity by reducing the unit type that has the most duplicates.
     In case of ties, units are removed in order 'infantry -> cavalry -> elephants -> leader'
 
-    :param hits_taken: number of hits taken
+    :param losses: number of hits taken
     :param army: your army
     :returns: new army with reduced unit counts or None if
     '''
@@ -459,7 +539,7 @@ def max_count_reduce_strategy(hits_taken: int, army: Army) -> Optional[Army]:
         army.leader
     ])
 
-    for i in range(min(army.army_size, hits_taken)):
+    for i in range(min(army.army_size, losses)):
         largest_type = np.argmax(counts)
         counts[largest_type] -= 1
 
@@ -473,21 +553,21 @@ def max_count_reduce_strategy(hits_taken: int, army: Army) -> Optional[Army]:
 
 
 def reduce_armies(attacker: 'Army',
-                  hits_attacker: int,
+                  losses_attacker: int,
                   defender: 'Army',
-                  hits_defender: int,
+                  losses_defender: int,
                   reduce_strategy: Callable[[int, Army], Army] = max_count_reduce_strategy) -> (Optional[Army], Optional[Army]):
     '''
     Returns the reduced armies when applying the specified reduce strategy.
 
     :param attacker: attacking army
-    :param hits_atttacker: number of hits the attacker deals
+    :param losses_attacker: number of hits the attacker deals
     :param defender: defending army
-    :param hits_defender: number of hits the defender deals
+    :param losses_defender: number of hits the defender deals
     :returns: tuple of the two Armies, which might be None due to loosing all units
     '''
-    a = reduce_strategy(hits_defender, attacker)
-    d = reduce_strategy(hits_attacker, defender)
+    a = reduce_strategy(losses_defender, attacker)
+    d = reduce_strategy(losses_attacker, defender)
 
     return a, d
 
