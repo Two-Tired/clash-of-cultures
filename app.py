@@ -50,11 +50,9 @@ if __name__ == '__main__':
                     leader=1,
                     fortress=False)
 
-    battle = Battle(attacker=attacker, defender=defender)
-
     # a = attacker.combat_value_probabilities(first_round=False, opponent=defender, attacking=True)
     # d = defender.combat_value_probabilities(first_round=False, opponent=attacker, attacking=False)
 
     # losses = battle_round(attacker, defender)
 
-    analyze_single_unit_combat(fortress=True)
+    # analyze_single_unit_combat(fortress=False)

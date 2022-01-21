@@ -187,7 +187,8 @@ class Army:
         # warships
         if (
             first_round and
-            (battle_type.value & 3) > 0 and  # either naval battle or landing ... AND
+            # either naval battle or landing ... AND
+            (battle_type.value & 3) > 0 and
             self.warships  # you have warships researched
         ):
             ignored_hits_modifier += 1
@@ -415,16 +416,28 @@ def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False):
         cross['probability_defender']
 
     # compute losses for each opponent
-    cross['losses_attacker'] = cross['hits_defender'].subtract(
-        cross['ignored_hits_attacker']).clip(0, attacker.army_size)
-    cross['losses_defender'] = cross['hits_attacker'].subtract(
-        cross['ignored_hits_defender']).clip(0, defender.army_size)
+    cross['losses_attacker'] = cross['hits_defender'] \
+        .subtract(cross['ignored_hits_attacker']) \
+        .clip(0, attacker.army_size)
+    cross['losses_defender'] = cross['hits_attacker'] \
+        .subtract(cross['ignored_hits_defender']) \
+        .clip(0, defender.army_size)
 
     # group losses
-    losses = cross.groupby(['losses_attacker', 'losses_defender'])[
-        'probability'].sum().reset_index()
+    losses = cross \
+        .groupby(['losses_attacker', 'losses_defender'])['probability'] \
+        .sum() \
+        .reset_index()
 
     return losses
+
+
+def battle(attacker: 'Army', defender: 'Army', battle_type: BattleType = BattleType.LAND):
+    max_iteration = 10
+    iteration = 0
+    while (attacker != None and defender != None and iteration < max_iteration):
+        print("Fight!")
+        iteration += 1
 
 
 def max_count_reduce_strategy(hits_taken: int, army: Army) -> Optional[Army]:
@@ -439,8 +452,12 @@ def max_count_reduce_strategy(hits_taken: int, army: Army) -> Optional[Army]:
     '''
     # counts are given in order of increasing value such that removing the first
     # occurence of the maximum count always removes least important unit type
-    counts = np.array([army.infantry, army.cavalry,
-                      army.elephants, army.leader])
+    counts = np.array([
+        army.infantry,
+        army.cavalry,
+        army.elephants,
+        army.leader
+    ])
 
     for i in range(min(army.army_size, hits_taken)):
         largest_type = np.argmax(counts)

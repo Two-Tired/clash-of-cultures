@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipe SYSTEM "ipe.dtd">
 <ipe version="70218" creator="Ipe 7.2.24">
-<info created="D:20220121143952" modified="D:20220121144922"/>
+<info created="D:20220121143952" modified="D:20220121150152"/>
 <ipestyle name="basic">
 <symbol name="arrow/arc(spx)">
 <path stroke="sym-stroke" fill="sym-stroke" pen="sym-pen">
@@ -328,5 +328,6 @@ h
 240 664 l
 280 664 l
 </path>
+<text matrix="1 0 0 1 328 168" transformations="translations" pos="80 608" stroke="black" type="label" width="77.543" height="6.918" depth="0" valign="baseline">civilization effects</text>
 </page>
 </ipe>
