@@ -1,0 +1,33 @@
+leader;civilization;title;timing;cost;requirement;effect
+Ahuitzotl;Azteken;Expansionismus;Landschlacht;;Bei Treffer zufügen;Ignoriere 1 Treffer, wenn alle deine Städte mindestens 2 Felder von hier entfernt sind.
+Akbar;Indien;Klingenbewehrte Stosszähne;Vor Landschlacht;1 Ore;Bei Kampfwurf;Erhalte hier bei jedem Kampfwurf +1 KS für jeden deiner lebenden Kriegselefanten (dauert noch an, auch wenn Akbar getötet wird).
+Alexander der Große;Griechenland;Herrscher der Welt;Landschlacht;;Bei Kampfwurf;Erhalte hier +1 KS für jedes nicht-Startgebiet mit 1 deiner Städte.
+Attila;Hunnen;Herr der Pferde;Landschlacht;;Bei Kampfwurf;1 Kavallerie hier, die Kampffertigkeit aktiviert, nutzt dabei stattdessen den Effekt von Elefanten.
+Bleda;Hunnen;Rammbock;Landschlacht gegen Stadt;;;Dein Gegner darf hier in der 1. Kampfrunde keine Taktik spielen.
+Etbaal;Phönizien;Priester der Astarte;Landschlacht;;Bei Kampfwurf;Erhalte hier +2 KS, wenn eine deiner Städte mit Tempel in Reichweite 2 ist.
+Hannibal;Karthago;Militär-Genie;Landschlacht;;;Gegner kann hier in der 1. Kampfrunde maximal Boni in Höhe von +2 KS erhalten (Rest verfällt).
+Hanno der Grosse;Karthago;Flottenkommandant;Seeschlacht;;Bei Kampfwurf;Erhalte hier +2 KS.
+K'inich Janaab Pakal I.;Maya;Schild der Sonne;Landschlacht mit Obelisk;;Bei Treffer zufügen in der ersten Kampfrunde;Ignoriere hier in der 1. Kamprunde 1 Treffer.
+Kaiser Augustus;Rom;Imperator;Landschlacht;;Bei Kampfwurf;Erhalte hier +2 KS, wenn du keine Stadt in diesem Gebiet hast.
+Kaiserin Wu Zetian;China;Scharfsinnige Eroberin;Landschlacht;;Bei Kampfwurf;Hast du zu Beginn einer Kampfrunde mindestens so viele Einheiten wie dein Gegner? Erhalte hier +2 KS.
+König Pumayaton;Phönizien;Beschützer des Volkes;Landschlacht;1 Kultur;Bei Kampfwurf einmalig;Verteidigst du hier eine Stadt? Ignoriere 1 Treffer. Schlacht gewonnen? Erhalte die Kosten zurück.
+Königin Boudicca;Kelten;Kriegerkönigin;Landschlacht;;Bei Kampfwurf;Erhalte hier +2 KS, wenn dein Gegner mehr Kriegsführungs-Fortschritte besitzt als du.
+Königin Dido;Karthago;Aufopferung;Landschlacht;;Bei Kampfwurf als Verteidiger;Erhalte hier +2 KS.
+Kyros II.;Persien;Brillianter Stratege;Landschlacht;;Bei Taktik aufdecken;Ignoriere hier den Effekt deiner Taktik, dann +2 KS in dieser Kampfrunde.
+Leonidas I.;Griechenland;Held der Thermopylen;Landschlacht;;Bei Kampfwurf;Erhalte hier +2 KS pro Armee-Einheit, die dein Gegner mehr hat als du.
+Maharadscha Shri Gupta;Indien;Effektive Planung;Landschlacht;;Bei Kampfwurf;Erhalte hier +2 KS, wenn du in dieser Kampfrunde keine Taktik gespielt hast.
+Nabopolassar;Babylon;Befreier;Landschlacht;;Bei Kampfwurf;Erhalte hier +2 KS, wenn dein Gegner mindestens so viele Städte hat, wie du.
+Nebukadnezar II.;Babylon;Ikonoklast;Landschlacht;;Bei Kampfwurf gegen Tempel;Erhalte hier +2 KS.
+Perikles;Griechenland;Admiral;Seeschlacht;;Bei Kampfwurf;Erhalte hier +2 KS.
+Qin Shi Huang;China;Taktiker;Landschlacht;2 Kultur;Bei Treffer zufügen;Ignoriere hier 1 Treffer.
+Ragnar Lodbrok;Wikinger;Schrecken des Nordens;Landschlacht;;Bei Kampfwurf nach Entladen;Erhalte hier +2 KS.
+Ramses II.;Ägypten;Küstenmacht;Schlacht;;Bei Kampfwurf;Greifst du mit Ramses II. eine Stadt an, die an ein Wasserfeld angrenzt - oder Piraten? Erhalte +2 KS.
+Siyaj K'ak';Maya;Geburt des Feuers;Landschlacht gegen Stadt;;Bei Kampfwurf in der ersten Kampfrunde;Erhalte hier +X KS in der 1. Kampfrunde. X = Stadtgröße.
+Sulla;Rom;Zivilisator;Landschlacht;;Bei Kampfwurf gegen Barbaren;Erhalte hier +2 KS.
+Tenno Go-Toba;Japan;Der Weg des Schwertes;Vor Landschlacht;1 Erz;Bei Kampfwurf;Erhalte hier +2 KS bei jedem Kampfwurf (dauert noch an, auch wenn Go-Toba getötet wird).
+Tenno Jimmu;Japan;Befestigung;Landschlacht mit Festung;;Bei Kampfwurf;Erhalte + 2 KS bei jedem Kampfwurf, wenn Jimmu in Reichweite 2 dieser Stadt ist.
+Tenno Suiko;Japan;Wehrhaft;Landschlacht als Verteidiger;;Bei Kampfwurf;Erhalte hier +2 KS bei jedem Kampfwurf.
+Vercingetorix;Kelten;Kriegervolk;Landschlacht;;Bei Kampfwurf;Erhalte +1 KS hier für jeden deiner Siedler in Reichweite 2.
+Viriathus;Kelten;Todesangst;Landschlacht;2 Zufriedenheit;Bei Kampfwurf ab der zweiten Kampfrunde;Stelle zu Beginn der Kampfrunde 1 gegnerische Armee-Einheit hier auf 1 freies, angrenzendes Landfeld (nimmt nicht mehr an dieser Schlacht teil) - max 1x pro Kampfrunde.
+Wac Chanil Ajaw;Maya;Neue Dynastie;Landschlacht;;Bei Kampfwurf;Erhalte hier +2 KS, wenn Wac Chanil in Reichweite einer deiner Städte ist.
+Xerxes I.;Persien;Gewaltiges Heer;;;;Einheiten Limit ist hier 5! Hast du 5 Armee-Einheiten in einer Landschlacht? Taktik/Kampffertigkeiten aktivieren hier nicht möglich.
