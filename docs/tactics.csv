@@ -1,0 +1,17 @@
+Titel;Anzahl;Armee;Schiff;Festung;Wann;Was
+Belagerung;1;1;0;0;Schlacht gegen Stadt bei Kampfwurf;Erhalte +1 KS. Außerdem darf dein Gegner vor seinem Kampfwurf 2 Nahrung bezahlen. Tut er das nicht, kann er in dieser Kampfrunde keine Kampffertigkeiten aktivieren.
+Bogenschützen;4;1;0;0;Beim Aufdecken;Wirf 1 W. 5 oder 6: Dein Gegner muss sofort 1 seiner Armee-Einheiten entfernen.
+Erhöhte Position;5;1;0;1;Bei Kampfwurf;Dein Gegner kann keine Kampffertigkeiten aktivieren. Achtung: Nicht nutzbar, wenn du der Angreifer einer Schlacht in einer Stadt bist.
+Flankenangriff;2;1;0;0;Als Angreifer;Beim Kampfwurf wirfst du 1 zusätzlichen W.
+Für das Volk!;1;1;0;1;Als Verteidiger einer Stadt;Beim Kampfwurf wirfst du 1 zusätzlichen W.
+Heftiger Widerstand;3;1;1;1;Als Verteidiger bei Kampfwurf;Angreifer hat -1 KS pro Armee-Einheit (Landschlacht)/Schiffe (Seeschlacht) von ihm in dieser Schlacht.
+Hohe Moral;5;1;1;1;Bei Kampfwurf;Erhalte +2 KS.
+Keilformation;2;1;0;0;Als Angreifer bei Kampfwurf;Erhalte +1 KS pro Armee-Einheit des Gegners.
+Kundschafter;1;1;1;1;Beim Aufdecken, vor jedem anderen Effekt;Ignoriere die Taktik des Gegners und erhalte sie auf die Hand.
+Märtyrer;1;1;1;0;Beim Aufdecken;Entferne sofort (noch bevor Würfel durch Taktiken gewürfelt werden) 1 deiner Armee-Einheiten/Schiffe von hier. Dann muss dein Gegner das ebenfalls tun. Außerdem: Ignoriere die gegnerische Taktik.
+Peltasten;4;1;0;0;Beim Aufdecken;Wirf so viele Würfel, wie du Armee-Einheiten in der Landschlacht hast. 1 oder mehrere 5 oder 6 gewürfelt? Du darfst in Schritt 4 1 Treffer ignorieren.
+Taktischer Rückzug;2;1;0;0;Beim Aufdecken als Verteidiger;Führt alle anderen Beim Aufdecken:-Effekte aus. Dann endet diese Landschlacht. Ziehe deine Armee-Einheiten auf ein angrenzendes Landfeld ohne Gegner. Die Schlacht zählt als vom Gegner gewonnen.
+Überraschende Taktik;2;1;1;1;Bei Kampfwurf/Nach Schritt 4;Erhalte +1 KS/Hast du gerade mindestens 1 Armee-Einheit des Gegners getötet? Ziehe 1 Aktionskarte.
+Umzingelt!;4;1;0;0;Vor Ende von Schritt 4;Musste dein Gegner gleich viele/mehr Armee-Einheiten entfernen als du? Wirf 1 W. 5 oder 6 gewürfelt: Füge 1 Treffer zu, der nicht ignoriert werden kann.
+Verbesserte Verteidigung;1;1;0;1;Als Verteidiger einer Stadt;Du darfst in Schritt 4 1 Treffer ignorieren.
+Verteidigungsstellung;4;1;1;1;Als Verteidiger;Beim Kampfwurf wirfst du 1 zusätzlichen W.
