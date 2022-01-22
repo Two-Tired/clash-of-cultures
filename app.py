@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     defender = Army(infantry=0,
                     cavalry=0,
-                    elephants=1,
+                    elephants=0,
                     leader=1,
                     fortress=False)
 
@@ -61,4 +61,6 @@ if __name__ == '__main__':
     battle_result = battle.simulate()
 
     result = battle_result.aggregate()
+
     print(result)
+    print(result.probability.sum())

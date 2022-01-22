@@ -393,30 +393,37 @@ class Battle:
         initial_state = BattleState.initial_state(self)
 
         open_states = [initial_state]
-        round_number = 0
-        while (round_number < self.max_rounds and open_states):
+        while open_states:
             state = open_states.pop()
+            # print(state)
+
+            round_number = state.battle_round + 1
+            if round_number == self.max_rounds:
+                continue
+
+            is_first_round = round_number == 0
 
             losses = battle_round(
                 state.attacker,
                 state.defender,
-                round_number == 0
+                is_first_round
             )
 
             for index, row in losses.iterrows():
-                # # skip case where no units are lost
-                # if not row.losses_attacker and not row.losses_defender:
+                # skip case where no units are lost
+                # if not is_first_round and not row.losses_attacker and not row.losses_defender:
                 #     continue
-
+                # print("losses_attacker", row.losses_attacker, "losses_defender",
+                #       row.losses_defender, "probability", row.probability)
                 a, d = reduce_armies(state.attacker, int(row.losses_attacker),
                                      state.defender, int(row.losses_defender))
                 prob = state.probability * row.probability
-                new_state = BattleState(a, d, prob, self, state)
+                new_state = BattleState(
+                    a, d, self, prob, row.probability, round_number, state)
+                # print(new_state)
                 state.next_states.append(new_state)
                 if a and d:
                     open_states.append(new_state)
-
-            round_number += 1
 
         return initial_state
 
@@ -432,20 +439,36 @@ class BattleState:
     defender: Army = attrs.field(
         # validator=optional(instance_of(Army))
     )
+    battle: Battle = attrs.field(
+        repr=False,
+        validator=attrs.validators.instance_of(Battle)
+    )
     probability: float = attrs.field(
+        default=1.0,
         validator=[
             attrs.validators.instance_of(float),
             attrs.validators.ge(0),
             attrs.validators.le(1),
         ]
     )
-    battle: Battle = attrs.field(
-        repr=False,
-        validator=attrs.validators.instance_of(Battle)
+    round_probability: float = attrs.field(
+        default=1.0,
+        validator=[
+            attrs.validators.instance_of(float),
+            attrs.validators.ge(0),
+            attrs.validators.le(1),
+        ]
+    )
+    battle_round: int = attrs.field(
+        default=-1,
+        validator=[
+            attrs.validators.instance_of(int),
+            attrs.validators.ge(-1)
+        ]
     )
     previous_state: 'BattleState' = attrs.field(
-        repr=False,
         default=None,
+        repr=False,
         # validator=optional(instance_of('BattleState'))
     )
     next_states: list('BattleState') = attrs.field(
@@ -455,7 +478,7 @@ class BattleState:
 
     @classmethod
     def initial_state(cls, battle: Battle):
-        return cls(battle.attacker, battle.defender, 1.0, battle)
+        return cls(battle.attacker, battle.defender, battle)
 
     def get_leaves(self, collector: list = None):
         if not self.next_states:
@@ -466,6 +489,24 @@ class BattleState:
 
         for state in self.next_states:
             state.get_leaves(collector)
+
+    def __str__(self):
+        return f'BattleState(attacker={str(self.attacker):4s}, defender={str(self.defender):4s}, probability={self.probability:8.6f}, round_probability={self.round_probability:8.6f}, battle_round={self.battle_round:2}{", type=root" if not self.previous_state else (", type=leave" if not self.next_states else "")})'
+
+    def bfs_print(self):
+        bfs_ordered = list()
+        queue = list()
+
+        bfs_ordered.append(self)
+        queue.append(self)
+        while queue:
+            state = queue.pop()
+            for child in state.next_states:
+                bfs_ordered.append(child)
+                queue.append(child)
+
+        for state in bfs_ordered:
+            print(state)
 
     def to_tuple(self):
         return (self.attacker, self.defender, self.probability)
@@ -583,8 +624,8 @@ def reduce_armies(attacker: 'Army',
     :param losses_defender: number of hits the defender deals
     :returns: tuple of the two Armies, which might be None due to loosing all units
     '''
-    a = reduce_strategy(losses_defender, attacker)
-    d = reduce_strategy(losses_attacker, defender)
+    a = reduce_strategy(losses_attacker, attacker)
+    d = reduce_strategy(losses_defender, defender)
 
     return a, d
 
