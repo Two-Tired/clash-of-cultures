@@ -56,7 +56,7 @@ def validate_max_army_count(instance, attribute, value):
             f'Maximum army size is 4!')
 
 
-@attrs.define(frozen=True)
+@attrs.define(frozen=True, order=True)
 class Army:
     '''
     A class to represent a single army (i.e. group of military units).
@@ -125,7 +125,7 @@ class Army:
     def __str__(self):
         if (self.army_size == 0):
             return '-'
-        return 'I' * self.infantry + 'C' * self.cavalry + 'E' * self.elephants + 'I' * self.leader + 'S' * self.ships
+        return 'I' * self.infantry + 'C' * self.cavalry + 'E' * self.elephants + 'L' * self.leader + 'S' * self.ships
 
     @property
     def army_size(self):

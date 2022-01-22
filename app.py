@@ -39,14 +39,14 @@ def analyze_single_unit_combat(fortress: bool = False, siegecraft_type: Siegecra
 
 if __name__ == '__main__':
     attacker = Army(infantry=1,
-                    cavalry=0,
+                    cavalry=1,
                     elephants=0,
                     leader=0,
                     siegecraft_type=SiegecraftType.NONE)
 
     defender = Army(infantry=0,
                     cavalry=0,
-                    elephants=0,
+                    elephants=1,
                     leader=1,
                     fortress=False)
 
