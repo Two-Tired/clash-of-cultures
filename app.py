@@ -59,8 +59,11 @@ if __name__ == '__main__':
 
     battle = Battle(attacker, defender)
     battle_result = battle.simulate()
-
     result = battle_result.aggregate()
-
     print(result)
-    print(result.probability.sum())
+
+    # import timeit, functools
+    # t_simple = timeit.Timer(functools.partial(battle.simulate, True))
+    # print(t_simple.timeit(3))
+    # t_exact = timeit.Timer(functools.partial(battle.simulate, False))
+    # print(t_exact.timeit(3))

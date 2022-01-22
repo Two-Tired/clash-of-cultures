@@ -389,7 +389,7 @@ class Battle:
         ]
     )
 
-    def simulate(self):
+    def simulate(self, simplify=True):
         initial_state = BattleState.initial_state(self)
 
         open_states = [initial_state]
@@ -409,18 +409,22 @@ class Battle:
                 is_first_round
             )
 
+            zero_loss_prob = losses[(losses.losses_attacker == 0) & (
+                losses.losses_defender == 0)].probability[0]
+
             for index, row in losses.iterrows():
                 # skip case where no units are lost
-                # if not is_first_round and not row.losses_attacker and not row.losses_defender:
-                #     continue
-                # print("losses_attacker", row.losses_attacker, "losses_defender",
-                #       row.losses_defender, "probability", row.probability)
+                if simplify and not is_first_round and not row.losses_attacker and not row.losses_defender:
+                    continue
+
+                prob = state.probability * row.probability
+                if simplify and not is_first_round:
+                    prob /= 1 - zero_loss_prob
+
                 a, d = reduce_armies(state.attacker, int(row.losses_attacker),
                                      state.defender, int(row.losses_defender))
-                prob = state.probability * row.probability
                 new_state = BattleState(
                     a, d, self, prob, row.probability, round_number, state)
-                # print(new_state)
                 state.next_states.append(new_state)
                 if a and d:
                     open_states.append(new_state)
