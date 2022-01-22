@@ -106,25 +106,26 @@ class Army:
         ]
     )
     fortress: bool = attrs.field(
-        repr=False,
         default=False,
         validator=attrs.validators.instance_of(bool)
     )
     steel_weapons: bool = attrs.field(
-        repr=False,
         default=False,
         validator=attrs.validators.instance_of(bool)
     )
     warships: bool = attrs.field(
-        repr=False,
         default=False,
         validator=attrs.validators.instance_of(bool)
     )
     siegecraft_type: SiegecraftType = attrs.field(
-        repr=False,
         default=SiegecraftType.NONE,
         validator=attrs.validators.instance_of(SiegecraftType)
     )
+
+    def __str__(self):
+        if (self.army_size == 0):
+            return '-'
+        return 'I' * self.infantry + 'C' * self.cavalry + 'E' * self.elephants + 'I' * self.leader + 'S' * self.ships
 
     @property
     def army_size(self):
@@ -388,6 +389,37 @@ class Battle:
         ]
     )
 
+    def simulate(self):
+        initial_state = BattleState.initial_state(self)
+
+        open_states = [initial_state]
+        round_number = 0
+        while (round_number < self.max_rounds and open_states):
+            state = open_states.pop()
+
+            losses = battle_round(
+                state.attacker,
+                state.defender,
+                round_number == 0
+            )
+
+            for index, row in losses.iterrows():
+                # # skip case where no units are lost
+                # if not row.losses_attacker and not row.losses_defender:
+                #     continue
+
+                a, d = reduce_armies(state.attacker, int(row.losses_attacker),
+                                     state.defender, int(row.losses_defender))
+                prob = state.probability * row.probability
+                new_state = BattleState(a, d, prob, self, state)
+                state.next_states.append(new_state)
+                if a and d:
+                    open_states.append(new_state)
+
+            round_number += 1
+
+        return initial_state
+
 
 @attrs.define
 class BattleState:
@@ -425,12 +457,29 @@ class BattleState:
     def initial_state(cls, battle: Battle):
         return cls(battle.attacker, battle.defender, 1.0, battle)
 
-    def print_leaves(self):
+    def get_leaves(self, collector: list = None):
         if not self.next_states:
-            print(self)
+            if collector != None:
+                collector.append(self)
+            else:
+                print(self)
 
         for state in self.next_states:
-            state.print_leaves()
+            state.get_leaves(collector)
+
+    def to_tuple(self):
+        return (self.attacker, self.defender, self.probability)
+
+    def aggregate(self):
+        final_states = list()
+        self.get_leaves(final_states)
+        state_tuples = [leave.to_tuple() for leave in final_states]
+        df = pd.DataFrame(state_tuples,
+                          columns=['attacker', 'defender', 'probability'])
+
+        return df.groupby(['attacker', 'defender'], dropna=False) \
+            .sum() \
+            .reset_index()
 
 
 def values_to_hits(combat_value_probs):
@@ -486,38 +535,6 @@ def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False):
         .reset_index()
 
     return losses
-
-
-def simulate_battle(battle: Battle):
-    initial_state = BattleState.initial_state(battle)
-
-    open_states = [initial_state]
-    round_number = 0
-    while (round_number < battle.max_rounds and open_states):
-        state = open_states.pop()
-
-        losses = battle_round(
-            state.attacker,
-            state.defender,
-            round_number == 0
-        )
-
-        for index, row in losses.iterrows():
-            # skip case where no units are lost
-            if not row.losses_attacker and not row.losses_defender:
-                continue
-
-            a, d = reduce_armies(state.attacker, int(row.losses_attacker),
-                                 state.defender, int(row.losses_defender))
-            prob = state.probability * row.probability
-            new_state = BattleState(a, d, prob, battle, state)
-            state.next_states.append(new_state)
-            if a and d:
-                open_states.append(new_state)
-
-        round_number += 1
-
-    return initial_state
 
 
 def max_count_reduce_strategy(losses: int, army: Army) -> Optional[Army]:

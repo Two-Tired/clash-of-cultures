@@ -1,4 +1,4 @@
-from combat import Army, Battle, BattleType, SiegecraftType, simulate_battle
+from combat import Army, Battle, BattleType, SiegecraftType
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -58,6 +58,7 @@ if __name__ == '__main__':
     # analyze_single_unit_combat(fortress=False)
 
     battle = Battle(attacker, defender)
-    battle_result = simulate_battle(battle)
+    battle_result = battle.simulate()
 
-    battle_result.print_leaves()
+    result = battle_result.aggregate()
+    print(result)
