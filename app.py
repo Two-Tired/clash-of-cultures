@@ -53,7 +53,7 @@ def analyze_battle(battle: Battle):
     d_E = battle.defender.elephants
     d_L = battle.defender.leader
 
-    fig, axs = plt.subplots(8, 4)
+    fig, axs = plt.subplots(5, 4)
     for a, attacker in enumerate([
         Army(a_I, a_C, a_E, a_L),
         Army(a_I, a_C, a_E, a_L, steel_weapons=True),
@@ -73,24 +73,42 @@ def analyze_battle(battle: Battle):
             Army(d_I, d_C, d_E, d_L, fortress=True),
             Army(d_I, d_C, d_E, d_L, steel_weapons=True, fortress=True),
         ]):
+            if (not defender.fortress) and (not attacker.siegecraft_type is SiegecraftType.NONE):
+                continue
+
+            r = a
+            c = d
+            if not attacker.siegecraft_type is SiegecraftType.NONE:
+                if not attacker.steel_weapons:
+                    c = d - 2
+                else:
+                    r = a - 3
+
             curr_battle = Battle(attacker, defender)
             battle_result = curr_battle.simulate()
             result = battle_result.aggregate()
             matrix = to_combat_bar(result)
 
-            axs[a, d].matshow(matrix, vmin=0, vmax=.4)
+            axs[r, c].matshow(matrix, vmin=0, vmax=.4)
             for (i, j), z in np.ndenumerate(matrix):
-                axs[a, d].text(j, i, '{:0.2f}'.format(
+                axs[r, c].text(j, i, '{:0.2f}'.format(
                     z), ha='center', va='center')
 
-            axs[a, d].set_xticks(range(9))
-            axs[a, d].set_xticklabels(labels)
-            axs[a, d].set_yticks([])
-            if (a == 0):
-                axs[a, d].set_title(plot_labels_d[d], fontsize='large')
-            if (d == 0):
-                axs[a, d].set_ylabel(plot_labels_a[a], fontsize='large', rotation=0)
-                axs[a, d].yaxis.set_label_coords(-.22, .5)
+            axs[r, c].set_xticks(range(9))
+            axs[r, c].set_xticklabels(labels)
+            axs[r, c].set_yticks([])
+            if r == 0:
+                axs[r, c].set_title(plot_labels_d[d], fontsize='large')
+            # if (d == 0 or (d == 2 and a > 1)):
+            if c == 0:
+                axs[r, c].set_ylabel(
+                    plot_labels_a[a], fontsize='large', rotation=0)
+                axs[r, c].yaxis.set_label_coords(-.22, .25)
+            if (c == 0 or c == 1) and r == 2:
+                axs[r, c].set_title(plot_labels_d[d], fontsize='large')
+            if (c == 2 and r > 1):
+                axs[r, c].set_ylabel('+SW', fontsize='large', rotation=0)
+                axs[r, c].yaxis.set_label_coords(-.1, .25)
 
     plt.suptitle(
         f'Remaining units: {battle.attacker} (left) attacking {battle.defender} (top)')
@@ -98,13 +116,13 @@ def analyze_battle(battle: Battle):
 
 
 if __name__ == '__main__':
-    attacker = Army(infantry=4,
+    attacker = Army(infantry=1,
                     cavalry=0,
                     elephants=0,
                     leader=0,
                     siegecraft_type=SiegecraftType.NONE)
 
-    defender = Army(infantry=4,
+    defender = Army(infantry=1,
                     cavalry=0,
                     elephants=0,
                     leader=0,
