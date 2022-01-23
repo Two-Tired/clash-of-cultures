@@ -5,7 +5,7 @@ from attrs.validators import instance_of, optional
 import math
 import numpy as np
 import pandas as pd
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple, List
 
 
 class UnitType(Enum):
@@ -131,7 +131,11 @@ class Army:
     def army_size(self):
         return self.infantry + self.cavalry + self.elephants + self.leader
 
-    def combat_value_probabilities(self, first_round: bool = False, opponent: 'Army' = None, attacking: bool = False, battle_type: 'BattleType' = BattleType.LAND):
+    def combat_value_probabilities(self,
+                                   first_round: bool = False,
+                                   opponent: 'Army' = None,
+                                   attacking: bool = False,
+                                   battle_type: 'BattleType' = BattleType.LAND) -> pd.DataFrame:
         '''
         Returns a list of probabilities with corresponding army values and ignored hits for this army when
         fighting the specified opponent in the specified environment.
@@ -224,7 +228,10 @@ class Army:
 
         return combat_value_probs
 
-    def apply_combat_abilities(self, value, i, c, e2, e3, e4, l, prob):
+    def apply_combat_abilities(self,
+                               value: int,
+                               i: int, c: int, e2: int, e3: int, e4: int, l: int,
+                               prob: float) -> List[Tuple[int, int, float]]:
         '''
         Returns a list of rolls modified by the combat abilities of your units.
 
@@ -251,7 +258,7 @@ class Army:
         else:
             return self.leader_ability(value, i, c, e2, e3, e4, prob)
 
-    def infantry_ability(self, i):
+    def infantry_ability(self, i: int) -> int:
         '''
         Returns the combat bonus through infantry ability activations.
 
@@ -260,7 +267,7 @@ class Army:
         '''
         return min(i, self.infantry)
 
-    def cavalry_ability(self, c):
+    def cavalry_ability(self, c: int) -> int:
         '''
         Returns the combat bonus through cavalry ability activations.
 
@@ -269,7 +276,7 @@ class Army:
         '''
         return min(c, self.cavalry) * 2
 
-    def elephant_ability(self, e2, e3, e4):
+    def elephant_ability(self, e2: int, e3: int, e4: int) -> int:
         '''
         Returns the combat malus through elephant ability activations and the
         number of ignored hits.
@@ -300,7 +307,7 @@ class Army:
 
         return ignore_count, malus
 
-    def is_leader_ability_active(self, l):
+    def is_leader_ability_active(self, l: int) -> bool:
         '''
         Returns whether your leader ability gets activated by your roll
 
@@ -309,7 +316,7 @@ class Army:
         '''
         return l > 0 and self.leader > 0
 
-    def leader_ability(self, value, i, c, e2, e3, e4, prob):
+    def leader_ability(self, value: int, i: int, c: int, e2: int, e3: int, e4: int, prob: float) -> List[Tuple[int, int, float]]:
         '''
         Returns a list of all possible combination when re-rolling the leader dice.
         Make sure that `is_leader_ability_active` is true!
@@ -389,7 +396,13 @@ class Battle:
         ]
     )
 
-    def simulate(self, simplify=True):
+    def simulate(self, simplify=True) -> 'BattleState':
+        '''
+        Simulates this battle.
+
+        :param simplify: ignores no-hit-outcomes after round 0 (this should not alter results, but is faster, kept for debugging purposes)
+        :returns: the initial BattleState as root of the combat tree
+        '''
         initial_state = BattleState.initial_state(self)
 
         open_states = [initial_state]
@@ -481,10 +494,23 @@ class BattleState:
     )
 
     @classmethod
-    def initial_state(cls, battle: Battle):
+    def initial_state(cls, battle: Battle) -> 'BattleState':
+        '''
+        Initializes an initial BattleState from the given battle.
+
+        :param battle: the battle
+        :returns: a new BattleState
+        '''
         return cls(battle.attacker, battle.defender, battle)
 
-    def get_leaves(self, collector: list = None):
+    def get_leaves(self, collector: list = None) -> None:
+        '''
+        Iterates all leaves (i.e. final states) beginning from this BattleState.
+        If a collector is provided, the leaves are collected in it, otherwise 
+        they are printed to console.
+
+        :param collector: list to collect leaves in
+        '''
         if not self.next_states:
             if collector != None:
                 collector.append(self)
@@ -497,7 +523,7 @@ class BattleState:
     def __str__(self):
         return f'BattleState(attacker={str(self.attacker):4s}, defender={str(self.defender):4s}, probability={self.probability:8.6f}, round_probability={self.round_probability:8.6f}, battle_round={self.battle_round:2}{", type=root" if not self.previous_state else (", type=leave" if not self.next_states else "")})'
 
-    def bfs_print(self):
+    def bfs_print(self) -> None:
         bfs_ordered = list()
         queue = list()
 
@@ -512,10 +538,20 @@ class BattleState:
         for state in bfs_ordered:
             print(state)
 
-    def to_tuple(self):
+    def to_tuple(self) -> Tuple[Army, Army, float]:
+        '''
+        Converts this BattleState to a tuple.
+
+        :returns: ('attacker': Army, 'defender': Army, 'probability': double)
+        '''
         return (self.attacker, self.defender, self.probability)
 
-    def aggregate(self):
+    def aggregate(self) -> pd.DataFrame:
+        '''
+        Collects all possible outcomes of this BattleState.
+
+        :returns: DataFrame with columns ['attacker': Army, 'defender': Army, 'probability': double]
+        '''
         final_states = list()
         self.get_leaves(final_states)
         state_tuples = [leave.to_tuple() for leave in final_states]
@@ -527,7 +563,13 @@ class BattleState:
             .reset_index()
 
 
-def values_to_hits(combat_value_probs):
+def values_to_hits(combat_value_probs) -> pd.DataFrame:
+    '''
+    Converts the combat values of an army to the amount of hits the army dealt.
+
+    :param combat_value_probs: DataFrame with columns ['value', 'ignored_hits', 'probability']
+    :returns: DataFrame with columns ['hits', 'ignored_hits', 'probability']
+    '''
     combat_value_probs = combat_value_probs.rename(columns={'value': 'hits'})
     combat_value_probs['hits'] = combat_value_probs['hits'].floordiv(5)
 
@@ -539,7 +581,7 @@ def values_to_hits(combat_value_probs):
     return combat_value_probs
 
 
-def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False):
+def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False) -> pd.DataFrame:
     '''
     Given the two fighting armies, this method returns the losses of a battle round.
 
@@ -649,7 +691,7 @@ dice = [
 ]
 
 
-def roll_dice(count):
+def roll_dice(count) -> pd.DataFrame:
     '''
     Rolls the specified amount of dice.
 
