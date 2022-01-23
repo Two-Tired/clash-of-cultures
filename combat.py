@@ -563,6 +563,21 @@ class BattleState:
             .reset_index()
 
 
+def to_combat_bar(aggregated_state: pd.DataFrame) -> np.ndarray:
+    bar = np.zeros((1, 9))
+
+    for index, row in aggregated_state.iterrows():
+        if pd.isnull(row.attacker) and pd.isnull(row.defender):
+            idx = 4
+        elif not pd.isnull(row.attacker):
+            idx = 4 - row.attacker.army_size
+        else:
+            idx = 4 + row.defender.army_size
+        bar[0, idx] += row.probability
+
+    return bar
+
+
 def values_to_hits(combat_value_probs) -> pd.DataFrame:
     '''
     Converts the combat values of an army to the amount of hits the army dealt.
