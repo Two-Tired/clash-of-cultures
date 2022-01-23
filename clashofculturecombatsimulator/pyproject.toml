@@ -1,0 +1,49 @@
+[tool.briefcase]
+project_name = "Clash of Culture Combat Simulator"
+bundle = "de.twotired"
+version = "0.0.1"
+url = "https://twotired.de/clashofculturecombatsimulator"
+license = "BSD license"
+author = 'Axel Forsch'
+author_email = "axel.forsch@googlemail.com"
+
+[tool.briefcase.app.clashofculturecombatsimulator]
+formal_name = "Clash of Culture Combat Simulator"
+description = "Simulates battles in the board game 'Clash of Cultures'"
+icon = "src/clashofculturecombatsimulator/resources/clashofculturecombatsimulator"
+sources = ['src/clashofculturecombatsimulator']
+requires = []
+
+
+[tool.briefcase.app.clashofculturecombatsimulator.macOS]
+requires = [
+    'toga-cocoa>=0.3.0.dev20',
+]
+
+[tool.briefcase.app.clashofculturecombatsimulator.linux]
+requires = [
+    'toga-gtk>=0.3.0.dev20',
+]
+system_requires = [
+    'libgirepository1.0-dev',
+    'libcairo2-dev',
+    'libpango1.0-dev',
+    'libwebkitgtk-3.0-0',
+    'gir1.2-webkit-3.0',
+]
+
+[tool.briefcase.app.clashofculturecombatsimulator.windows]
+requires = [
+    'toga-winforms>=0.3.0.dev20',
+]
+
+# Mobile deployments
+[tool.briefcase.app.clashofculturecombatsimulator.iOS]
+requires = [
+    'toga-iOS>=0.3.0.dev20',
+]
+
+[tool.briefcase.app.clashofculturecombatsimulator.android]
+requires = [
+    'toga-android>=0.3.0.dev20',
+]
