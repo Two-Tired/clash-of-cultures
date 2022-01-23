@@ -1,6 +1,8 @@
-from combat import Army, Battle, BattleType, SiegecraftType, to_combat_bar
+from combat import Army, Battle, BattleType, SiegecraftType, to_combat_bar, rate_combat_bar
 import matplotlib.pyplot as plt
 import numpy as np
+
+plt.rcParams['text.usetex'] = True
 
 
 def analyze_single_unit_combat(fortress: bool = False, siegecraft_type: SiegecraftType = SiegecraftType.NONE):
@@ -83,10 +85,16 @@ def analyze_battle(battle: Battle):
             curr_battle = Battle(attacker, defender)
             battle_result = curr_battle.simulate()
             result = battle_result.aggregate()
-            matrix = to_combat_bar(result)
+            combat_bar = to_combat_bar(result)
 
-            axs[r, c].matshow(matrix, vmin=0, vmax=.4)
-            for (i, j), z in np.ndenumerate(matrix):
+            rating = rate_combat_bar(combat_bar)
+            # print(r, c, rating)
+
+            axs[r, c].matshow(combat_bar, vmin=0, vmax=.4)
+            axs[r, c].plot(rating+4, 0.5, 'r+')
+            axs[r, c].text(
+                rating+4, 1, f'{rating:.2f}', color='red', ha='center', va='center')
+            for (i, j), z in np.ndenumerate(combat_bar):
                 axs[r, c].text(j, i, '{:.0f}'.format(
                     z*100), ha='center', va='center')
 
@@ -107,22 +115,20 @@ def analyze_battle(battle: Battle):
                 axs[r, c].yaxis.set_label_coords(-.1, .25)
 
     plt.suptitle(
-        f'Remaining units: {battle.attacker} (left) attacking {battle.defender} (top)')
+        f'Remaining units: $\mathcal{{{battle.attacker}}}$ (left) attacking $\mathcal{{{battle.defender}}}$ (top)')
     plt.show()
 
 
 if __name__ == '__main__':
-    attacker = Army(infantry=2,
+    attacker = Army(infantry=1,
                     cavalry=0,
                     elephants=0,
-                    leader=0,
-                    siegecraft_type=SiegecraftType.NONE)
+                    leader=0)
 
-    defender = Army(infantry=2,
+    defender = Army(infantry=1,
                     cavalry=0,
                     elephants=0,
-                    leader=0,
-                    fortress=False)
+                    leader=0)
 
     # a = attacker.combat_value_probabilities(first_round=False, opponent=defender, attacking=True)
     # d = defender.combat_value_probabilities(first_round=False, opponent=attacker, attacking=False)
@@ -142,7 +148,7 @@ if __name__ == '__main__':
 
     # with cProfile.Profile() as pr:
     analyze_battle(battle)
-    
+
     # stats = pstats.Stats(pr)
     # stats.sort_stats(pstats.SortKey.TIME)
     # stats.print_stats(100)

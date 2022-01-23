@@ -8,6 +8,7 @@ import pandas as pd
 from typing import Callable, Optional, Tuple, List
 from functools import lru_cache
 
+
 class UnitType(Enum):
     '''
     Enum for the different unit types.
@@ -591,6 +592,17 @@ def to_combat_bar(aggregated_state: pd.DataFrame) -> np.ndarray:
 
     return bar
 
+def rate_combat_bar(combat_bar: np.ndarray) -> float:
+    '''
+    Rates the combat based on the expected amount of remaining units. 
+    Positive values indicate remaining units of the defender, negative 
+    ones indicate remaining units of the attacker.
+
+    :param combat_bar: result combat bar
+    :returns: expected amount of survivors
+    '''
+    return combat_bar @ np.arange(-4, 5)
+
 
 def values_to_hits(combat_value_probs) -> pd.DataFrame:
     '''
@@ -718,6 +730,7 @@ dice = [
     (5, UnitType.INFANTRY, 1/12),
     (6, UnitType.INFANTRY, 1/6)
 ]
+
 
 @lru_cache(maxsize=5)
 def roll_dice(count) -> pd.DataFrame:
