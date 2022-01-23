@@ -98,16 +98,16 @@ def analyze_battle(battle: Battle):
 
 
 if __name__ == '__main__':
-    attacker = Army(infantry=1,
-                    cavalry=1,
+    attacker = Army(infantry=4,
+                    cavalry=0,
                     elephants=0,
                     leader=0,
                     siegecraft_type=SiegecraftType.NONE)
 
-    defender = Army(infantry=0,
+    defender = Army(infantry=4,
                     cavalry=0,
-                    elephants=1,
-                    leader=1,
+                    elephants=0,
+                    leader=0,
                     fortress=False)
 
     # a = attacker.combat_value_probabilities(first_round=False, opponent=defender, attacking=True)

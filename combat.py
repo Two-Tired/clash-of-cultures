@@ -422,8 +422,10 @@ class Battle:
                 is_first_round
             )
 
-            zero_loss_prob = losses[(losses.losses_attacker == 0) & (
-                losses.losses_defender == 0)].probability[0]
+            zero_loss = losses[(losses.losses_attacker == 0) & (
+                losses.losses_defender == 0)].probability
+            if zero_loss.any():
+                zero_loss_prob = zero_loss[0]
 
             for index, row in losses.iterrows():
                 # skip case where no units are lost
@@ -431,7 +433,7 @@ class Battle:
                     continue
 
                 prob = state.probability * row.probability
-                if simplify and not is_first_round:
+                if simplify and zero_loss.any() and not is_first_round:
                     prob /= 1 - zero_loss_prob
 
                 a, d = reduce_armies(state.attacker, int(row.losses_attacker),
