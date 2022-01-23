@@ -38,9 +38,8 @@ def analyze_single_unit_combat(fortress: bool = False, siegecraft_type: Siegecra
 
 
 def analyze_battle(battle: Battle):
-    labels = ['4A', '3A', '2A', '1A', 'None', '1D', '2D', '3D', '4D']
-    plot_labels_a = ['None', 'Steal Weapons', 'S-Cancle Attack', 'S-Cancle Ignore',
-                     'S-Cancle Both', 'SW +\nS-Cancle Attack', 'SW +\nS-Cancle Ignore', 'SW +\nS-Cancle Both']
+    labels = ['4A', '3A', '2A', '1A', '0', '1D', '2D', '3D', '4D']
+    plot_labels_a = ['None', 'Steal Weapons', 'Cancel Attack', 'Cancel Ignore']
     plot_labels_d = ['None', 'Steal Weapons', 'Fortress', 'SW + Fortress']
 
     a_I = battle.attacker.infantry
@@ -53,19 +52,16 @@ def analyze_battle(battle: Battle):
     d_E = battle.defender.elephants
     d_L = battle.defender.leader
 
-    fig, axs = plt.subplots(5, 4)
+    fig, axs = plt.subplots(4, 4, figsize=(15, 5))
     for a, attacker in enumerate([
         Army(a_I, a_C, a_E, a_L),
         Army(a_I, a_C, a_E, a_L, steel_weapons=True),
         Army(a_I, a_C, a_E, a_L, siegecraft_type=SiegecraftType.CANCEL_ATTACK),
         Army(a_I, a_C, a_E, a_L, siegecraft_type=SiegecraftType.CANCEL_IGNORE),
-        Army(a_I, a_C, a_E, a_L, siegecraft_type=SiegecraftType.CANCEL_BOTH),
         Army(a_I, a_C, a_E, a_L, steel_weapons=True,
              siegecraft_type=SiegecraftType.CANCEL_ATTACK),
         Army(a_I, a_C, a_E, a_L, steel_weapons=True,
-             siegecraft_type=SiegecraftType.CANCEL_IGNORE),
-        Army(a_I, a_C, a_E, a_L, steel_weapons=True,
-             siegecraft_type=SiegecraftType.CANCEL_BOTH),
+             siegecraft_type=SiegecraftType.CANCEL_IGNORE)
     ]):
         for d, defender in enumerate([
             Army(d_I, d_C, d_E, d_L),
@@ -82,7 +78,7 @@ def analyze_battle(battle: Battle):
                 if not attacker.steel_weapons:
                     c = d - 2
                 else:
-                    r = a - 3
+                    r = a - 2
 
             curr_battle = Battle(attacker, defender)
             battle_result = curr_battle.simulate()
@@ -91,8 +87,8 @@ def analyze_battle(battle: Battle):
 
             axs[r, c].matshow(matrix, vmin=0, vmax=.4)
             for (i, j), z in np.ndenumerate(matrix):
-                axs[r, c].text(j, i, '{:0.2f}'.format(
-                    z), ha='center', va='center')
+                axs[r, c].text(j, i, '{:.0f}'.format(
+                    z*100), ha='center', va='center')
 
             axs[r, c].set_xticks(range(9))
             axs[r, c].set_xticklabels(labels)
