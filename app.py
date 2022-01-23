@@ -112,13 +112,13 @@ def analyze_battle(battle: Battle):
 
 
 if __name__ == '__main__':
-    attacker = Army(infantry=1,
+    attacker = Army(infantry=2,
                     cavalry=0,
                     elephants=0,
                     leader=0,
                     siegecraft_type=SiegecraftType.NONE)
 
-    defender = Army(infantry=1,
+    defender = Army(infantry=2,
                     cavalry=0,
                     elephants=0,
                     leader=0,
@@ -137,7 +137,16 @@ if __name__ == '__main__':
     # print(battle)
     # print(result)
 
+    # import cProfile
+    # import pstats
+
+    # with cProfile.Profile() as pr:
     analyze_battle(battle)
+    
+    # stats = pstats.Stats(pr)
+    # stats.sort_stats(pstats.SortKey.TIME)
+    # stats.print_stats(100)
+    # stats.dump_stats(filename='with_cache.prof')
 
     # import timeit, functools
     # t_simple = timeit.Timer(functools.partial(battle.simulate, True))
