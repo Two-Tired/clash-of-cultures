@@ -148,16 +148,29 @@ class Army:
         :returns: DataFrame with columns 'value', 'ignored_hits', 'probability'
         '''
         army_size_modifier = 0
+        ignored_hits_modifier = 0
 
         # fortresses
         if (
             not attacking and  # you are defending ... AND
             first_round and  # it is the first combat round ... AND
-            self.fortress and  # you have a fortress ... AND
-            (opponent == None or  # oppenent is not specified ... OR
-             (opponent.siegecraft_type.value & SiegecraftType.CANCEL_ATTACK.value) == 0)  # opponent does NOT cancel attack
+            self.fortress  # you have a fortress ...
         ):
-            army_size_modifier += 1
+            # opponent does NOT cancel attack
+            if (
+                opponent == None or  # oppenent is not specified
+                (opponent.siegecraft_type.value &
+                 SiegecraftType.CANCEL_ATTACK.value) == 0
+            ):
+                army_size_modifier += 1
+
+            # opponent does NOT cancel ignore
+            if (
+                opponent == None or  # oppenent is not specified
+                (opponent.siegecraft_type.value &
+                 SiegecraftType.CANCEL_IGNORE.value) == 0
+            ):
+                ignored_hits_modifier += 1
 
         # roll the dice!
         rolls = roll_dice(self.army_size + army_size_modifier)
@@ -193,7 +206,6 @@ class Army:
                 )
             ]
 
-        ignored_hits_modifier = 0
         # warships
         if (
             first_round and
