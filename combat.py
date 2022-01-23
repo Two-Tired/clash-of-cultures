@@ -6,7 +6,7 @@ import math
 import numpy as np
 import pandas as pd
 from typing import Callable, Optional, Tuple, List
-
+from functools import lru_cache
 
 class UnitType(Enum):
     '''
@@ -149,6 +149,7 @@ class Army:
         '''
         army_size_modifier = 0
         ignored_hits_modifier = 0
+        combat_value_modifier = 0
 
         # fortresses
         if (
@@ -230,7 +231,6 @@ class Army:
             .reset_index()
 
         # steel weapons
-        combat_value_modifier = 0
         if (self.steel_weapons):
             combat_value_modifier += 1
             if (opponent == None or not opponent.steel_weapons):
@@ -719,7 +719,7 @@ dice = [
     (6, UnitType.INFANTRY, 1/6)
 ]
 
-
+@lru_cache(maxsize=5)
 def roll_dice(count) -> pd.DataFrame:
     '''
     Rolls the specified amount of dice.
