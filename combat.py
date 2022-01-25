@@ -601,7 +601,8 @@ def rate_combat_bar(combat_bar: np.ndarray) -> float:
     :param combat_bar: result combat bar
     :returns: expected amount of survivors
     '''
-    return combat_bar @ np.arange(-4, 5)
+    rating = combat_bar @ np.arange(-4, 5)
+    return rating[0]
 
 
 def values_to_hits(combat_value_probs) -> pd.DataFrame:
