@@ -55,7 +55,11 @@ async def simple_battle(ctx, a_I: int, a_C: int, a_E: int, a_L: int, d_I: int, d
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
-        await ctx.send('You do not have the correct role for this command.')
+        await ctx.send(f'You do not have the correct role for this command.')
+    elif isinstance(error, commands.errors.CommandInvokeError):
+        await ctx.send(f'You provided invalid command arguments: {error}')
+    else:
+        raise error
 
 
 bot.run(TOKEN)
