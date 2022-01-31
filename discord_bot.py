@@ -41,6 +41,8 @@ async def simple_battle(ctx,
     logging.info(f'Analyzing battle: {attacker} attacking {defender}')
 
     s = analyze_battle(battle, True)
+    if not s:
+        raise Exception('None returned by analyze_battle!')
     logging.debug('  ...analysis done')
 
     s.seek(0)
