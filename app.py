@@ -1,11 +1,16 @@
-from combat import Army, Battle, BattleType, SiegecraftType, to_combat_bar, rate_combat_bar
+
+import combat
+from combat import Army, Battle, SiegecraftType
+import analysis
 import matplotlib.pyplot as plt
 import numpy as np
 
 plt.rcParams['text.usetex'] = True
 
 
-def analyze_single_unit_combat(fortress: bool = False, siegecraft_type: SiegecraftType = SiegecraftType.NONE):
+def analyze_single_unit_combat(fortress: bool = False,
+                               siegecraft_type: SiegecraftType
+                               = SiegecraftType.NONE):
     single_unit_armies = [
         Army(infantry=1, siegecraft_type=siegecraft_type, fortress=fortress),
         Army(cavalry=1, siegecraft_type=siegecraft_type, fortress=fortress),
@@ -17,7 +22,7 @@ def analyze_single_unit_combat(fortress: bool = False, siegecraft_type: Siegecra
     fig, axs = plt.subplots(4, 4)
     for a, attacker in enumerate(single_unit_armies):
         for d, defender in enumerate(single_unit_armies):
-            losses = battle_round(attacker, defender, first_round=True)
+            losses = combat.battle_round(attacker, defender, first_round=True)
             win_matrix = losses['probability'].to_numpy().reshape(2, 2)
             axs[a, d].matshow(win_matrix, vmin=0, vmax=.611)
             for (i, j), z in np.ndenumerate(win_matrix):
@@ -39,7 +44,7 @@ def analyze_single_unit_combat(fortress: bool = False, siegecraft_type: Siegecra
     plt.show()
 
 
-def analyze_battle(battle: Battle):
+def analyze_battle_full(battle: Battle):
     labels = ['4A', '3A', '2A', '1A', '0', '1D', '2D', '3D', '4D']
     plot_labels_a = ['None', 'Steal Weapons', 'Cancel Attack', 'Cancel Ignore']
     plot_labels_d = ['None', 'Steal Weapons', 'Fortress', 'SW + Fortress']
@@ -71,12 +76,13 @@ def analyze_battle(battle: Battle):
             Army(d_I, d_C, d_E, d_L, fortress=True),
             Army(d_I, d_C, d_E, d_L, steel_weapons=True, fortress=True),
         ]):
-            if (not defender.fortress) and (not attacker.siegecraft_type is SiegecraftType.NONE):
+            if (not defender.fortress) and \
+                    (attacker.siegecraft_type is not SiegecraftType.NONE):
                 continue
 
             r = a
             c = d
-            if not attacker.siegecraft_type is SiegecraftType.NONE:
+            if attacker.siegecraft_type is not SiegecraftType.NONE:
                 if not attacker.steel_weapons:
                     c = d - 2
                 else:
@@ -85,15 +91,15 @@ def analyze_battle(battle: Battle):
             curr_battle = Battle(attacker, defender)
             battle_result = curr_battle.simulate()
             result = battle_result.aggregate()
-            combat_bar = to_combat_bar(result)
+            combat_bar = combat.to_combat_bar(result)
 
-            rating = rate_combat_bar(combat_bar)
+            rating = combat.rate_combat_bar(combat_bar)
             # print(r, c, rating)
 
             axs[r, c].matshow(combat_bar, vmin=0, vmax=.4)
             axs[r, c].plot(rating+4, 0.5, 'r+')
-            axs[r, c].text(
-                rating+4, 1, f'{rating:.2f}', color='red', ha='center', va='center')
+            axs[r, c].text(rating+4, 1, f'{rating:.2f}',
+                           color='red', ha='center', va='center')
             for (i, j), z in np.ndenumerate(combat_bar):
                 axs[r, c].text(j, i, '{:.0f}'.format(
                     z*100), ha='center', va='center')
@@ -114,8 +120,8 @@ def analyze_battle(battle: Battle):
                 axs[r, c].set_ylabel('+SW', fontsize='large', rotation=0)
                 axs[r, c].yaxis.set_label_coords(-.1, .25)
 
-    plt.suptitle(
-        f'Remaining units: $\mathcal{{{battle.attacker}}}$ (left) attacking $\mathcal{{{battle.defender}}}$ (top)')
+    plt.suptitle(f'Remaining units: $\\mathcal{{{battle.attacker}}}$ (left) '
+                 'attacking $\\mathcal{{{battle.defender}}}$ (top)')
     plt.show()
 
 
@@ -130,24 +136,13 @@ if __name__ == '__main__':
                     elephants=0,
                     leader=0)
 
-    # a = attacker.combat_value_probabilities(first_round=False, opponent=defender, attacking=True)
-    # d = defender.combat_value_probabilities(first_round=False, opponent=attacker, attacking=False)
-
-    # losses = battle_round(attacker, defender)
-
-    # analyze_single_unit_combat(fortress=False)
-
     battle = Battle(attacker, defender)
-    # battle_result = battle.simulate()
-    # result = battle_result.aggregate()
-    # print(battle)
-    # print(result)
 
     # import cProfile
     # import pstats
 
     # with cProfile.Profile() as pr:
-    analyze_battle(battle)
+    analysis.analyze_battle(battle)
 
     # stats = pstats.Stats(pr)
     # stats.sort_stats(pstats.SortKey.TIME)

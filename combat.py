@@ -1,7 +1,6 @@
 from enum import Enum
 from collections import Counter
 import attrs
-from attrs.validators import instance_of, optional
 import math
 import numpy as np
 import pandas as pd
@@ -53,8 +52,7 @@ def validate_max_army_count(instance, attribute, value):
     attrs-validator function for the maximum capacity of a single hex.
     '''
     if (instance.army_size > 4):
-        raise ValueError(
-            f'Maximum army size is 4!')
+        raise ValueError('Maximum army size is 4!')
 
 
 @attrs.define(frozen=True, order=True)
@@ -126,7 +124,11 @@ class Army:
     def __str__(self):
         if (self.army_size == 0):
             return '-'
-        return 'I' * self.infantry + 'C' * self.cavalry + 'E' * self.elephants + 'L' * self.leader + 'S' * self.ships
+        return 'I' * self.infantry + \
+            'C' * self.cavalry + \
+            'E' * self.elephants + \
+            'L' * self.leader + \
+            'S' * self.ships
 
     @property
     def army_size(self):
@@ -136,10 +138,12 @@ class Army:
                                    first_round: bool = False,
                                    opponent: 'Army' = None,
                                    attacking: bool = False,
-                                   battle_type: 'BattleType' = BattleType.LAND) -> pd.DataFrame:
+                                   battle_type: 'BattleType' = BattleType.LAND
+                                   ) -> pd.DataFrame:
         '''
-        Returns a list of probabilities with corresponding army values and ignored hits for this army when
-        fighting the specified opponent in the specified environment.
+        Returns a list of probabilities with corresponding army values and
+        ignored hits for this army when fighting the specified opponent in
+        the specified environment.
 
         :param first_round: is this the first battle round?
         :param opponent:    the opposing army
@@ -160,7 +164,7 @@ class Army:
         ):
             # opponent does NOT cancel attack
             if (
-                opponent == None or  # oppenent is not specified
+                opponent is None or  # oppenent is not specified
                 (opponent.siegecraft_type.value &
                  SiegecraftType.CANCEL_ATTACK.value) == 0
             ):
@@ -168,7 +172,7 @@ class Army:
 
             # opponent does NOT cancel ignore
             if (
-                opponent == None or  # oppenent is not specified
+                opponent is None or  # oppenent is not specified
                 (opponent.siegecraft_type.value &
                  SiegecraftType.CANCEL_IGNORE.value) == 0
             ):
@@ -181,14 +185,14 @@ class Army:
         if (battle_type == BattleType.NAVAL):
             rolls = roll_dice(self.ships + army_size_modifier)
 
-            applied_abilities = [
+            applied_abilities: List[List[Tuple[int, int, float]]] = [[
                 (value, 0, prob)
                 for value, prob
                 in zip(
                     rolls['value'],
                     rolls['probability']
                 )
-            ]
+            ]]
         else:
             # roll the dice!
             rolls = roll_dice(self.army_size + army_size_modifier)
@@ -217,14 +221,18 @@ class Army:
         ):
             ignored_hits_modifier += 1
 
-        # TODO: I am not sure if you can extend the list in the list comprehension above, then this step can be skipped
-        applied_abilities_as_list = list()
+        # TODO: I am not sure if you can extend the list in the list
+        # comprehension above, then this step can be skipped
+        applied_abilities_as_list: List[Tuple[int, int, float]] = list()
         for r in applied_abilities:
             applied_abilities_as_list.extend(r)
 
-        # group all entries with same value and ignored_hits and sum their probabilities
+        # group all entries with same value and ignored_hits and sum their
+        # probabilities
         combat_value_probs = pd.DataFrame(
-            applied_abilities_as_list, columns=['value', 'ignored_hits', 'probability'])
+            applied_abilities_as_list,
+            columns=['value', 'ignored_hits', 'probability']
+        )
         combat_value_probs['ignored_hits'] += ignored_hits_modifier
         combat_value_probs = combat_value_probs \
             .groupby(['value', 'ignored_hits']) \
@@ -234,7 +242,7 @@ class Army:
         # steel weapons
         if (self.steel_weapons):
             combat_value_modifier += 1
-            if (opponent == None or not opponent.steel_weapons):
+            if (opponent is None or not opponent.steel_weapons):
                 combat_value_modifier += 1
         combat_value_probs['value'] = combat_value_probs['value'] + \
             combat_value_modifier
@@ -243,8 +251,14 @@ class Army:
 
     def apply_combat_abilities(self,
                                value: int,
-                               i: int, c: int, e2: int, e3: int, e4: int, l: int,
-                               prob: float) -> List[Tuple[int, int, float]]:
+                               i: int,
+                               c: int,
+                               e2: int,
+                               e3: int,
+                               e4: int,
+                               leader: int,
+                               prob: float
+                               ) -> List[Tuple[int, int, float]]:
         '''
         Returns a list of rolls modified by the combat abilities of your units.
 
@@ -256,14 +270,16 @@ class Army:
         :param e4: rolled number of elephant abilities (on dice side 4)
         :param l: rolled number of leader abilities
         :param prob: probability of this dice roll
-        :returns: list of tuples, each being one possible dice roll in the form: ('value', 'ignored_hits', 'probability')
+        :returns: list of tuples, each being one possible dice roll in the \
+form: ('value', 'ignored_hits', 'probability')
         '''
         infantry_ability = self.infantry_ability(i)
         cavalry_ability = self.cavalry_ability(c)
         ignore_count, elephant_malus = self.elephant_ability(e2, e3, e4)
-        leader_ability = self.is_leader_ability_active(l)
+        leader_ability = self.is_leader_ability_active(leader)
 
-        combat_value = value + infantry_ability + cavalry_ability - elephant_malus
+        combat_value = value + infantry_ability + cavalry_ability - \
+            elephant_malus
         if (not leader_ability):
             combat_value_prob = (
                 combat_value, ignore_count, prob)
@@ -289,7 +305,7 @@ class Army:
         '''
         return min(c, self.cavalry) * 2
 
-    def elephant_ability(self, e2: int, e3: int, e4: int) -> int:
+    def elephant_ability(self, e2: int, e3: int, e4: int) -> Tuple[int, int]:
         '''
         Returns the combat malus through elephant ability activations and the
         number of ignored hits.
@@ -320,19 +336,27 @@ class Army:
 
         return ignore_count, malus
 
-    def is_leader_ability_active(self, l: int) -> bool:
+    def is_leader_ability_active(self, leader: int) -> bool:
         '''
         Returns whether your leader ability gets activated by your roll
 
         :param l: rolled number of leader abilities
         :returns: whether leader ability is active
         '''
-        return l > 0 and self.leader > 0
+        return leader > 0 and self.leader > 0
 
-    def leader_ability(self, value: int, i: int, c: int, e2: int, e3: int, e4: int, prob: float) -> List[Tuple[int, int, float]]:
+    def leader_ability(self,
+                       value: int,
+                       i: int,
+                       c: int,
+                       e2: int,
+                       e3: int,
+                       e4: int,
+                       prob: float
+                       ) -> List[Tuple[int, int, float]]:
         '''
-        Returns a list of all possible combination when re-rolling the leader dice.
-        Make sure that `is_leader_ability_active` is true!
+        Returns a list of all possible combination when re-rolling the leader
+        dice. Make sure that `is_leader_ability_active` is true!
 
         :param value: original summed dice values
         :param i: rolled number of infantry abilities
@@ -340,7 +364,8 @@ class Army:
         :param e2: rolled number of elephant abilities (on dice side 2)
         :param e3: rolled number of elephant abilities (on dice side 3)
         :param e4: rolled number of elephant abilities (on dice side 4)
-        :returns: list of tuples, each being one possible dice roll in the form: ('value', 'ignored_hits', 'probability')
+        :returns: list of tuples, each being one possible dice roll in the \
+form: ('value', 'ignored_hits', 'probability')
         '''
         value = value - 1  # remove dice showing leader symbol
 
@@ -373,8 +398,7 @@ class Army:
                     e2, e3, e4+1)
                 additional_value += elephant_malus - new_elephant_malus
             else:
-                print(
-                    "ERROR! All cases should be checked, this should never print.")
+                print("ERROR! All cases checked, this should never print.")
 
             new_value = value + additional_value
 
@@ -413,7 +437,8 @@ class Battle:
         '''
         Simulates this battle.
 
-        :param simplify: ignores no-hit-outcomes after round 0 (this should not alter results, but is faster, kept for debugging purposes)
+        :param simplify: ignores no-hit-outcomes after round 0 (this should \
+not alter results, but is faster, kept for debugging purposes)
         :returns: the initial BattleState as root of the combat tree
         '''
         initial_state = BattleState.initial_state(self)
@@ -422,6 +447,9 @@ class Battle:
         while open_states:
             state = open_states.pop()
             # print(state)
+
+            if (not state.attacker or not state.defender):
+                continue
 
             round_number = state.battle_round + 1
             if round_number == self.max_rounds:
@@ -442,7 +470,12 @@ class Battle:
 
             for index, row in losses.iterrows():
                 # skip case where no units are lost
-                if simplify and not is_first_round and not row.losses_attacker and not row.losses_defender:
+                if (
+                    simplify and
+                    not is_first_round and
+                    not row.losses_attacker and
+                    not row.losses_defender
+                ):
                     continue
 
                 prob = state.probability * row.probability
@@ -465,10 +498,10 @@ class BattleState:
     '''
     Class representing a possible state during a battle.
     '''
-    attacker: Army = attrs.field(
+    attacker: Optional[Army] = attrs.field(
         # validator=optional(instance_of(Army))
     )
-    defender: Army = attrs.field(
+    defender: Optional[Army] = attrs.field(
         # validator=optional(instance_of(Army))
     )
     battle: Battle = attrs.field(
@@ -503,7 +536,7 @@ class BattleState:
         repr=False,
         # validator=optional(instance_of('BattleState'))
     )
-    next_states: list('BattleState') = attrs.field(
+    next_states: List['BattleState'] = attrs.field(
         repr=False,
         factory=list
     )
@@ -520,14 +553,14 @@ class BattleState:
 
     def get_leaves(self, collector: list = None) -> None:
         '''
-        Iterates all leaves (i.e. final states) beginning from this BattleState.
-        If a collector is provided, the leaves are collected in it, otherwise 
+        Iterates all leaves (i.e. final states) beginning from this BattleState
+        If a collector is provided, the leaves are collected in it, otherwise
         they are printed to console.
 
         :param collector: list to collect leaves in
         '''
         if not self.next_states:
-            if collector != None:
+            if collector is not None:
                 collector.append(self)
             else:
                 print(self)
@@ -535,8 +568,22 @@ class BattleState:
         for state in self.next_states:
             state.get_leaves(collector)
 
+    @property
+    def node_type(self) -> str:
+        if not self.previous_state:
+            return "root"
+        elif not self.next_states:
+            return "leave"
+        else:
+            return "node"
+
     def __str__(self):
-        return f'BattleState(attacker={str(self.attacker):4s}, defender={str(self.defender):4s}, probability={self.probability:8.6f}, round_probability={self.round_probability:8.6f}, battle_round={self.battle_round:2}{", type=root" if not self.previous_state else (", type=leave" if not self.next_states else "")})'
+        return f'BattleState(attacker={str(self.attacker):4s}, '
+        f'defender={str(self.defender):4s}, '
+        f'probability={self.probability:8.6f}, '
+        f'round_probability={self.round_probability:8.6f}, '
+        f'battle_round={self.battle_round:2}, '
+        f'type={self.node_type})'
 
     def bfs_print(self) -> None:
         bfs_ordered = list()
@@ -553,7 +600,7 @@ class BattleState:
         for state in bfs_ordered:
             print(state)
 
-    def to_tuple(self) -> Tuple[Army, Army, float]:
+    def to_tuple(self) -> Tuple[Optional[Army], Optional[Army], float]:
         '''
         Converts this BattleState to a tuple.
 
@@ -565,9 +612,10 @@ class BattleState:
         '''
         Collects all possible outcomes of this BattleState.
 
-        :returns: DataFrame with columns ['attacker': Army, 'defender': Army, 'probability': double]
+        :returns: DataFrame with columns ['attacker': Army, 'defender': Army, \
+'probability': double]
         '''
-        final_states = list()
+        final_states: List[BattleState] = list()
         self.get_leaves(final_states)
         state_tuples = [leave.to_tuple() for leave in final_states]
         df = pd.DataFrame(state_tuples,
@@ -592,10 +640,11 @@ def to_combat_bar(aggregated_state: pd.DataFrame) -> np.ndarray:
 
     return bar
 
+
 def rate_combat_bar(combat_bar: np.ndarray) -> float:
     '''
-    Rates the combat based on the expected amount of remaining units. 
-    Positive values indicate remaining units of the defender, negative 
+    Rates the combat based on the expected amount of remaining units.
+    Positive values indicate remaining units of the defender, negative
     ones indicate remaining units of the attacker.
 
     :param combat_bar: result combat bar
@@ -609,7 +658,8 @@ def values_to_hits(combat_value_probs) -> pd.DataFrame:
     '''
     Converts the combat values of an army to the amount of hits the army dealt.
 
-    :param combat_value_probs: DataFrame with columns ['value', 'ignored_hits', 'probability']
+    :param combat_value_probs: DataFrame with columns ['value',\
+ 'ignored_hits', 'probability']
     :returns: DataFrame with columns ['hits', 'ignored_hits', 'probability']
     '''
     combat_value_probs = combat_value_probs.rename(columns={'value': 'hits'})
@@ -623,14 +673,18 @@ def values_to_hits(combat_value_probs) -> pd.DataFrame:
     return combat_value_probs
 
 
-def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False) -> pd.DataFrame:
+def battle_round(attacker: 'Army',
+                 defender: 'Army',
+                 first_round: bool = False) -> pd.DataFrame:
     '''
-    Given the two fighting armies, this method returns the losses of a battle round.
+    Given the two fighting armies, this method returns the losses of a battle
+    round.
 
     :param attacker: the attacking army
     :param defender: the defending army
     :param first_round: whether this is the first battle round
-    :returns: DataFrame with columns 'losses_attacker', 'losses_defender', 'probability'
+    :returns: DataFrame with columns 'losses_attacker', 'losses_defender', \
+'probability'
     '''
     a = attacker.combat_value_probabilities(first_round=first_round,
                                             opponent=defender,
@@ -668,16 +722,18 @@ def battle_round(attacker: 'Army', defender: 'Army', first_round: bool = False) 
 
 def max_count_reduce_strategy(losses: int, army: Army) -> Optional[Army]:
     '''
-    The basic strategy for removing units after taking hits. The strategy evolves around
-    keeping a high unit diversity by reducing the unit type that has the most duplicates.
-    In case of ties, units are removed in order 'infantry -> cavalry -> elephants -> leader'
+    The basic strategy for removing units after taking hits. The strategy
+    evolves around keeping a high unit diversity by reducing the unit type
+    that has the most duplicates. In case of ties, units are removed in order
+    'infantry -> cavalry -> elephants -> leader'.
 
     :param losses: number of hits taken
     :param army: your army
     :returns: new army with reduced unit counts or None if
     '''
-    # counts are given in order of increasing value such that removing the first
-    # occurence of the maximum count always removes least important unit type
+    # counts are given in order of increasing value such that removing the
+    # first occurence of the maximum count always removes least important
+    # unit type
     counts = np.array([
         army.infantry,
         army.cavalry,
@@ -693,16 +749,22 @@ def max_count_reduce_strategy(losses: int, army: Army) -> Optional[Army]:
         return None
 
     counts = counts.tolist()
-    new_army = attrs.evolve(
-        army, infantry=counts[0], cavalry=counts[1], elephants=counts[2], leader=counts[3])
+    new_army = attrs.evolve(army,
+                            infantry=counts[0],
+                            cavalry=counts[1],
+                            elephants=counts[2],
+                            leader=counts[3])
     return new_army
 
 
-def reduce_armies(attacker: 'Army',
+def reduce_armies(attacker: Army,
                   losses_attacker: int,
-                  defender: 'Army',
+                  defender: Army,
                   losses_defender: int,
-                  reduce_strategy: Callable[[int, Army], Army] = max_count_reduce_strategy) -> (Optional[Army], Optional[Army]):
+                  reduce_strategy:
+                  Callable[[int, Army], Optional[Army]
+                           ] = max_count_reduce_strategy
+                  ) -> Tuple[Optional[Army], Optional[Army]]:
     '''
     Returns the reduced armies when applying the specified reduce strategy.
 
@@ -710,7 +772,8 @@ def reduce_armies(attacker: 'Army',
     :param losses_attacker: number of hits the attacker deals
     :param defender: defending army
     :param losses_defender: number of hits the defender deals
-    :returns: tuple of the two Armies, which might be None due to loosing all units
+    :returns: tuple of the two Armies, which might be None due to loosing all\
+ units
     '''
     a = reduce_strategy(losses_attacker, attacker)
     d = reduce_strategy(losses_defender, defender)
@@ -739,7 +802,8 @@ def roll_dice(count) -> pd.DataFrame:
     Rolls the specified amount of dice.
 
     :param count: number of dice to roll
-    :returns: DataFrame with total roll value, the number of ability activations per unit and the probability of this roll
+    :returns: DataFrame with total roll value, the number of ability \
+activations per unit and the probability of this roll
     '''
     sequences = dice_recursion(count)  # (value, type, prob)
     rolls = list()  # (value, prob, I, C, E, L)
@@ -757,11 +821,15 @@ def roll_dice(count) -> pd.DataFrame:
                 c[UnitType.LEADER])
         rolls.append(roll)
 
-    rolls = pd.DataFrame(rolls, columns=[
-        'value', 'probability', UnitType.INFANTRY, UnitType.CAVALRY, UnitType.ELEPHANTS_2, UnitType.ELEPHANTS_3, UnitType.ELEPHANTS_4, UnitType.LEADER])
-    rolls = rolls.groupby(['value', UnitType.INFANTRY, UnitType.CAVALRY, UnitType.ELEPHANTS_2,
-                          UnitType.ELEPHANTS_3, UnitType.ELEPHANTS_4, UnitType.LEADER]).sum().reset_index()
-    return rolls
+    rollDF = pd.DataFrame(rolls, columns=[
+        'value', 'probability',
+        UnitType.INFANTRY, UnitType.CAVALRY, UnitType.ELEPHANTS_2,
+        UnitType.ELEPHANTS_3, UnitType.ELEPHANTS_4, UnitType.LEADER])
+    rollDF = rollDF.groupby(['value', UnitType.INFANTRY, UnitType.CAVALRY,
+                             UnitType.ELEPHANTS_2, UnitType.ELEPHANTS_3,
+                             UnitType.ELEPHANTS_4, UnitType.LEADER]) \
+        .sum().reset_index()
+    return rollDF
 
 
 def dice_recursion(count, sequences=None):
