@@ -245,13 +245,17 @@ class Army:
             columns=['value', 'ignored_hits', 'probability']
         )
         combat_value_probs['ignored_hits'] += ignored_hits_mod
+        combat_value_probs['value'] += combat_value_mod
+
+        combat_value_probs = combat_value_probs.rename(
+            columns={'value': 'hits'}
+        )
+        combat_value_probs['hits'] = combat_value_probs['hits'].floordiv(5)
+
         combat_value_probs = combat_value_probs \
-            .groupby(['value', 'ignored_hits']) \
+            .groupby(['hits', 'ignored_hits']) \
             .sum() \
             .reset_index()
-
-        combat_value_probs['value'] = combat_value_probs['value'] + \
-            combat_value_mod
 
         return combat_value_probs
 
@@ -573,11 +577,11 @@ class BattleState:
                                                 attacking=False,
                                                 battle_type=battle_type)
 
-        a = self.attacker.combat_value_probabilities(a_mods)
-        d = self.defender.combat_value_probabilities(d_mods)
+        a_hits = self.attacker.combat_value_probabilities(a_mods)
+        d_hits = self.defender.combat_value_probabilities(d_mods)
 
-        a_hits = values_to_hits(a)
-        d_hits = values_to_hits(d)
+        # a_hits = values_to_hits(a)
+        # d_hits = values_to_hits(d)
 
         # merge all rows of a with all rows of d (cross-product)
         cross = a_hits.merge(d_hits,
@@ -707,23 +711,24 @@ def rate_combat_bar(combat_bar: np.ndarray) -> float:
     return rating[0]
 
 
-def values_to_hits(combat_value_probs) -> pd.DataFrame:
-    '''
-    Converts the combat values of an army to the amount of hits the army dealt.
-
-    :param combat_value_probs: DataFrame with columns ['value',\
- 'ignored_hits', 'probability']
-    :returns: DataFrame with columns ['hits', 'ignored_hits', 'probability']
-    '''
-    combat_value_probs = combat_value_probs.rename(columns={'value': 'hits'})
-    combat_value_probs['hits'] = combat_value_probs['hits'].floordiv(5)
-
-    combat_value_probs = combat_value_probs \
-        .groupby(['hits', 'ignored_hits']) \
-        .sum() \
-        .reset_index()
-
-    return combat_value_probs
+# def values_to_hits(combat_value_probs) -> pd.DataFrame:
+#     '''
+#     Converts the combat values of an army to the amount of hits the army
+#     dealt.
+#
+#     :param combat_value_probs: DataFrame with columns ['value',\
+#  'ignored_hits', 'probability']
+#     :returns: DataFrame with columns ['hits', 'ignored_hits', 'probability']
+#     '''
+#     combat_value_probs = combat_value_probs.rename(columns={'value': 'hits'})
+#     combat_value_probs['hits'] = combat_value_probs['hits'].floordiv(5)
+#
+#     combat_value_probs = combat_value_probs \
+#         .groupby(['hits', 'ignored_hits']) \
+#         .sum() \
+#         .reset_index()
+#
+#     return combat_value_probs
 
 
 def max_count_reduce_strategy(losses: int, army: Army) -> Optional[Army]:
