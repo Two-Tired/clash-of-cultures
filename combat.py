@@ -134,24 +134,12 @@ class Army:
     def army_size(self):
         return self.infantry + self.cavalry + self.elephants + self.leader
 
-    def combat_value_probabilities(self,
-                                   first_round: bool = False,
-                                   opponent: 'Army' = None,
-                                   attacking: bool = False,
-                                   battle_type: 'BattleType' = BattleType.LAND
-                                   ) -> pd.DataFrame:
-        '''
-        Returns a list of probabilities with corresponding army values and
-        ignored hits for this army when fighting the specified opponent in
-        the specified environment.
-
-        :param first_round: is this the first battle round?
-        :param opponent:    the opposing army
-        :param attacking:   are you attacking?
-        :param type:        the type of battle you are fighting
-
-        :returns: DataFrame with columns 'value', 'ignored_hits', 'probability'
-        '''
+    def combat_modifiers(self,
+                         first_round: bool = False,
+                         opponent: 'Army' = None,
+                         attacking: bool = False,
+                         battle_type: 'BattleType' = BattleType.LAND
+                         ) -> Tuple[int, int, int]:
         army_size_modifier = 0
         ignored_hits_modifier = 0
         combat_value_modifier = 0
@@ -178,12 +166,44 @@ class Army:
             ):
                 ignored_hits_modifier += 1
 
-        # roll the dice!
-        rolls = roll_dice(self.army_size + army_size_modifier)
+        # warships
+        if (
+            first_round and
+            # either naval battle or landing ... AND
+            (battle_type.value & 3) > 0 and
+            self.warships  # you have warships researched
+        ):
+            ignored_hits_modifier += 1
+
+        # steel weapons
+        if (self.steel_weapons):
+            combat_value_modifier += 1
+            if (opponent is None or not opponent.steel_weapons):
+                combat_value_modifier += 1
+
+        return army_size_modifier, ignored_hits_modifier, combat_value_modifier
+
+    def combat_value_probabilities(self,
+                                   modifiers: Tuple[int, int, int] = (0, 0, 0),
+                                   battle_type: 'BattleType' = BattleType.LAND
+                                   ) -> pd.DataFrame:
+        '''
+        Returns a list of probabilities with corresponding army values and
+        ignored hits for this army when fighting the specified opponent in
+        the specified environment.
+
+        :param first_round: is this the first battle round?
+        :param opponent:    the opposing army
+        :param attacking:   are you attacking?
+        :param type:        the type of battle you are fighting
+
+        :returns: DataFrame with columns 'value', 'ignored_hits', 'probability'
+        '''
+        army_size_mod, ignored_hits_mod, combat_value_mod = modifiers
 
         # combat abilities
         if (battle_type == BattleType.NAVAL):
-            rolls = roll_dice(self.ships + army_size_modifier)
+            rolls = roll_dice(self.ships + army_size_mod)
 
             applied_abilities: List[List[Tuple[int, int, float]]] = [[
                 (value, 0, prob)
@@ -195,7 +215,7 @@ class Army:
             ]]
         else:
             # roll the dice!
-            rolls = roll_dice(self.army_size + army_size_modifier)
+            rolls = roll_dice(self.army_size + army_size_mod)
 
             applied_abilities = [
                 self.apply_combat_abilities(value, i, c, e2, e3, e4, l, prob)
@@ -212,15 +232,6 @@ class Army:
                 )
             ]
 
-        # warships
-        if (
-            first_round and
-            # either naval battle or landing ... AND
-            (battle_type.value & 3) > 0 and
-            self.warships  # you have warships researched
-        ):
-            ignored_hits_modifier += 1
-
         # TODO: I am not sure if you can extend the list in the list
         # comprehension above, then this step can be skipped
         applied_abilities_as_list: List[Tuple[int, int, float]] = list()
@@ -233,19 +244,14 @@ class Army:
             applied_abilities_as_list,
             columns=['value', 'ignored_hits', 'probability']
         )
-        combat_value_probs['ignored_hits'] += ignored_hits_modifier
+        combat_value_probs['ignored_hits'] += ignored_hits_mod
         combat_value_probs = combat_value_probs \
             .groupby(['value', 'ignored_hits']) \
             .sum() \
             .reset_index()
 
-        # steel weapons
-        if (self.steel_weapons):
-            combat_value_modifier += 1
-            if (opponent is None or not opponent.steel_weapons):
-                combat_value_modifier += 1
         combat_value_probs['value'] = combat_value_probs['value'] + \
-            combat_value_modifier
+            combat_value_mod
 
         return combat_value_probs
 
@@ -457,11 +463,7 @@ not alter results, but is faster, kept for debugging purposes)
 
             is_first_round = round_number == 0
 
-            losses = battle_round(
-                state.attacker,
-                state.defender,
-                is_first_round
-            )
+            losses = state.calculate_losses()
 
             zero_loss = losses[(losses.losses_attacker == 0) & (
                 losses.losses_defender == 0)].probability
@@ -550,6 +552,57 @@ class BattleState:
         :returns: a new BattleState
         '''
         return cls(battle.attacker, battle.defender, battle)
+
+    def calculate_losses(self) -> pd.DataFrame:
+        '''
+        This method returns the losses of this battle state.
+
+        :returns: DataFrame with columns 'losses_attacker', \
+'losses_defender', 'probability'
+        '''
+        if (not self.attacker or not self.defender):
+            raise RuntimeError('Battle needs two armies!')
+        first_round = self.battle_round == 0
+        battle_type = self.battle.battle_type
+        a_mods = self.attacker.combat_modifiers(first_round=first_round,
+                                                opponent=self.defender,
+                                                attacking=True,
+                                                battle_type=battle_type)
+        d_mods = self.defender.combat_modifiers(first_round=first_round,
+                                                opponent=self.attacker,
+                                                attacking=False,
+                                                battle_type=battle_type)
+
+        a = self.attacker.combat_value_probabilities(a_mods)
+        d = self.defender.combat_value_probabilities(d_mods)
+
+        a_hits = values_to_hits(a)
+        d_hits = values_to_hits(d)
+
+        # merge all rows of a with all rows of d (cross-product)
+        cross = a_hits.merge(d_hits,
+                             'cross',
+                             suffixes=('_attacker', '_defender'))
+
+        # compute combined probability of each row
+        cross['probability'] = cross['probability_attacker'] * \
+            cross['probability_defender']
+
+        # compute losses for each opponent
+        cross['losses_attacker'] = cross['hits_defender'] \
+            .subtract(cross['ignored_hits_attacker']) \
+            .clip(0, self.attacker.army_size)
+        cross['losses_defender'] = cross['hits_attacker'] \
+            .subtract(cross['ignored_hits_defender']) \
+            .clip(0, self.defender.army_size)
+
+        # group losses
+        losses = cross \
+            .groupby(['losses_attacker', 'losses_defender'])['probability'] \
+            .sum() \
+            .reset_index()
+
+        return losses
 
     def get_leaves(self, collector: list = None) -> None:
         '''
@@ -671,53 +724,6 @@ def values_to_hits(combat_value_probs) -> pd.DataFrame:
         .reset_index()
 
     return combat_value_probs
-
-
-def battle_round(attacker: 'Army',
-                 defender: 'Army',
-                 first_round: bool = False) -> pd.DataFrame:
-    '''
-    Given the two fighting armies, this method returns the losses of a battle
-    round.
-
-    :param attacker: the attacking army
-    :param defender: the defending army
-    :param first_round: whether this is the first battle round
-    :returns: DataFrame with columns 'losses_attacker', 'losses_defender', \
-'probability'
-    '''
-    a = attacker.combat_value_probabilities(first_round=first_round,
-                                            opponent=defender,
-                                            attacking=True)
-    d = defender.combat_value_probabilities(first_round=first_round,
-                                            opponent=attacker,
-                                            attacking=False)
-
-    a_hits = values_to_hits(a)
-    d_hits = values_to_hits(d)
-
-    # merge all rows of a with all rows of d (cross-product)
-    cross = a_hits.merge(d_hits, 'cross', suffixes=('_attacker', '_defender'))
-
-    # compute combined probability of each row
-    cross['probability'] = cross['probability_attacker'] * \
-        cross['probability_defender']
-
-    # compute losses for each opponent
-    cross['losses_attacker'] = cross['hits_defender'] \
-        .subtract(cross['ignored_hits_attacker']) \
-        .clip(0, attacker.army_size)
-    cross['losses_defender'] = cross['hits_attacker'] \
-        .subtract(cross['ignored_hits_defender']) \
-        .clip(0, defender.army_size)
-
-    # group losses
-    losses = cross \
-        .groupby(['losses_attacker', 'losses_defender'])['probability'] \
-        .sum() \
-        .reset_index()
-
-    return losses
 
 
 def max_count_reduce_strategy(losses: int, army: Army) -> Optional[Army]:
