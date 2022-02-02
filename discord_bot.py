@@ -34,7 +34,7 @@ async def say_hi(ctx):
 )
 async def simple_battle(ctx,
                         a_I: int, a_C: int, a_E: int, a_L: int,
-                        d_I: int, d_C: int, d_E: int, d_L: int):
+                        d_I: int, d_C: int, d_E: int, d_L: int) -> None:
     attacker = Army(a_I, a_C, a_E, a_L)
     defender = Army(d_I, d_C, d_E, d_L)
     battle = Battle(attacker, defender)
