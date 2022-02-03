@@ -4,8 +4,9 @@ import attrs
 import math
 import numpy as np
 import pandas as pd
-from typing import Callable, Optional, Tuple, List
+from typing import Callable, Optional, Tuple, List, Dict
 from functools import lru_cache
+import logging
 
 
 class UnitType(Enum):
@@ -420,7 +421,7 @@ form: ('value', 'ignored_hits', 'probability')
         return combat_value_probs
 
 
-@attrs.define(frozen=True)
+@attrs.frozen
 class Battle:
     '''
     Class representing a battle.
@@ -442,6 +443,32 @@ class Battle:
             attrs.validators.ge(0)
         ]
     )
+    lookup_table: Dict[Army, Dict[Army, pd.DataFrame]] = attrs.field(
+        hash=False,
+        repr=False,
+        factory=dict
+    )
+
+    def add_lookup_value(self,
+                         attacker: Army,
+                         defender: Army,
+                         combat_value_probs: pd.DataFrame
+                         ) -> bool:
+        if (attacker not in self.lookup_table):
+            self.lookup_table[attacker] = dict()
+        if (defender not in self.lookup_table[attacker]):
+            self.lookup_table[attacker][defender] = combat_value_probs
+            return True
+        return False
+
+    def get_lookup_value(self,
+                         attacker: Army,
+                         defender: Army
+                         ) -> Optional[pd.DataFrame]:
+        if (attacker in self.lookup_table):
+            if (defender in self.lookup_table[attacker]):
+                return self.lookup_table[attacker][defender]
+        return None
 
     def simulate(self, simplify=True) -> 'BattleState':
         '''
@@ -456,18 +483,17 @@ not alter results, but is faster, kept for debugging purposes)
         open_states = [initial_state]
         while open_states:
             state = open_states.pop()
-            # print(state)
 
             if (not state.attacker or not state.defender):
                 continue
 
-            round_number = state.battle_round + 1
+            round_number = state.battle_round
             if round_number == self.max_rounds:
                 continue
 
             is_first_round = round_number == 0
 
-            losses = state.calculate_losses()
+            losses = state.get_losses()
 
             zero_loss = losses[(losses.losses_attacker == 0) & (
                 losses.losses_defender == 0)].probability
@@ -488,10 +514,12 @@ not alter results, but is faster, kept for debugging purposes)
                 if simplify and zero_loss.any() and not is_first_round:
                     prob /= 1 - zero_loss_prob
 
-                a, d = reduce_armies(state.attacker, int(row.losses_attacker),
-                                     state.defender, int(row.losses_defender))
-                new_state = BattleState(
-                    a, d, self, prob, row.probability, round_number, state)
+                a, d = reduce_armies(state.attacker,
+                                     int(row.losses_attacker),
+                                     state.defender,
+                                     int(row.losses_defender))
+                new_state = BattleState(a, d, self, prob, row.probability,
+                                        round_number+1, state)
                 state.next_states.append(new_state)
                 if a and d:
                     open_states.append(new_state)
@@ -531,10 +559,10 @@ class BattleState:
         ]
     )
     battle_round: int = attrs.field(
-        default=-1,
+        default=0,
         validator=[
             attrs.validators.instance_of(int),
-            attrs.validators.ge(-1)
+            attrs.validators.ge(0)
         ]
     )
     previous_state: 'BattleState' = attrs.field(
@@ -557,6 +585,19 @@ class BattleState:
         '''
         return cls(battle.attacker, battle.defender, battle)
 
+    def get_losses(self) -> pd.DataFrame:
+        if (not self.attacker or not self.defender):
+            raise RuntimeError('Battle needs two armies!')
+
+        first_round = self.battle_round == 0
+        if not first_round:
+            losses = self.battle.get_lookup_value(self.attacker, self.defender)
+            if losses is not None:
+                logging.debug('Lookup value used')
+                return losses
+
+        return self.calculate_losses()
+
     def calculate_losses(self) -> pd.DataFrame:
         '''
         This method returns the losses of this battle state.
@@ -568,6 +609,7 @@ class BattleState:
             raise RuntimeError('Battle needs two armies!')
         first_round = self.battle_round == 0
         battle_type = self.battle.battle_type
+
         a_mods = self.attacker.combat_modifiers(first_round=first_round,
                                                 opponent=self.defender,
                                                 attacking=True,
@@ -606,6 +648,10 @@ class BattleState:
             .sum() \
             .reset_index()
 
+        if not first_round:
+            logging.debug('Lookup value added')
+            self.battle.add_lookup_value(self.attacker, self.defender, losses)
+
         return losses
 
     def get_leaves(self, collector: list = None) -> None:
@@ -635,12 +681,12 @@ class BattleState:
             return "node"
 
     def __str__(self):
-        return f'BattleState(attacker={str(self.attacker):4s}, '
-        f'defender={str(self.defender):4s}, '
-        f'probability={self.probability:8.6f}, '
-        f'round_probability={self.round_probability:8.6f}, '
-        f'battle_round={self.battle_round:2}, '
-        f'type={self.node_type})'
+        return f'BattleState(attacker={str(self.attacker):4s}, ' \
+            f'defender={str(self.defender):4s}, ' \
+            f'probability={self.probability:8.6f}, ' \
+            f'round_probability={self.round_probability:8.6f}, ' \
+            f'battle_round={self.battle_round:2}, ' \
+            f'type={self.node_type})'
 
     def bfs_print(self) -> None:
         bfs_ordered = list()
